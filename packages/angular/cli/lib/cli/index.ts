@@ -40,6 +40,7 @@ function loadCommands() {
     'help': require('../../commands/help').default,
     'version': require('../../commands/version').default,
     'doc': require('../../commands/doc').default,
+    'docker': require('../../commands/docker').default,
 
     // deprecated
     'get': require('../../commands/getset').default,
