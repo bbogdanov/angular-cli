@@ -1,0 +1,7 @@
+version: "2"
+services:
+  ${serviceName}:
+    build: .
+    image: $(imageName)
+    ports:
+      - "$(servicePort):80"

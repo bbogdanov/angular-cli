@@ -72,6 +72,12 @@
       "description": "Create an Angular module.",
       "schema": "./module/schema.json"
     },
+    "docker": {
+      "aliases": [ "dock" ],
+      "factory": "./docker",
+      "description": "Creates default yml and docker files.",
+      "schema": "./docker/schema.json"
+    },
     "pipe": {
       "aliases": [ "p" ],
       "factory": "./pipe",
