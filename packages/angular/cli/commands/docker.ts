@@ -1,8 +1,9 @@
 import { RunSchematicOptions } from './../models/schematic-command';
 import { CommandScope, Option } from './../models/command';
-import { tags } from '@angular-devkit/core';
+import { tags, terminal } from '@angular-devkit/core';
 import { SchematicCommand } from '../models/schematic-command';
 import { getDefaultSchematicCollection } from '../utilities/config';
+import { getEngineHost, getCollection } from '../utilities/schematics';
 
 export default class DockerCommand extends SchematicCommand {
   public readonly name = 'docker';
@@ -23,14 +24,14 @@ export default class DockerCommand extends SchematicCommand {
       type: String,
       default: this.project.name,
       aliases: ['in'],
-      description: 'Adds more details to output logging.',
+      description: 'The name of the docker image.',
     },
     {
       name: 'servicePort',
       type: Number,
       default: 8000,
       aliases: ['sp'],
-      description: 'Adds more details to output logging.',
+      description: 'The port of the appcliation service.',
     }
   ];
 
@@ -88,7 +89,30 @@ export default class DockerCommand extends SchematicCommand {
   }
 
   public printHelp(options: any) {
-    console.log('It works on help!', options);
+    const schematicName = options._[0];
+    if (schematicName) {
+      const argDisplay = this.arguments && this.arguments.length > 0
+        ? ' ' + this.arguments.filter(a => a !== 'schematic').map(a => `<${a}>`).join(' ')
+        : '';
+      const optionsDisplay = this.options && this.options.length > 0
+        ? ' [options]'
+        : '';
+      this.logger.info(`usage: ng docker ${schematicName}${argDisplay}${optionsDisplay}`);
+      this.printHelpOptions(options);
+    } else {
+      this.printHelpUsage(this.name, this.arguments, this.options);
+      const engineHost = getEngineHost();
+      const [collectionName] = this.parseCollectionName(options);
+      const collection = getCollection(collectionName);
+      const schematicNames: string[] = engineHost.listSchematics(collection);
+      this.logger.info('Available schematics:');
+      schematicNames.forEach(schematicName => {
+        this.logger.info(`    ${schematicName}`);
+      });
+
+      this.logger.warn(`\nTo see help for a schematic run:`);
+      this.logger.info(terminal.cyan(`  ng generate <schematic> --help`));
+    }
   }
 
   private parseCollectionName(options: any): string {
