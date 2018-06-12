@@ -21,15 +21,15 @@ export default class DockerCommand extends SchematicCommand {
     {
       name: 'imageName',
       type: String,
-      default: 'lol',
-      aliases: ['iN'],
+      default: this.project.name,
+      aliases: ['in'],
       description: 'Adds more details to output logging.',
     },
     {
       name: 'servicePort',
-      type: Boolean,
+      type: Number,
       default: 8000,
-      aliases: ['sP'],
+      aliases: ['sp'],
       description: 'Adds more details to output logging.',
     }
   ];
