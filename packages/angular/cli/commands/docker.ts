@@ -1,4 +1,3 @@
-import { RunSchematicOptions } from './../models/schematic-command';
 import { CommandScope, Option } from './../models/command';
 import { tags, terminal } from '@angular-devkit/core';
 import { SchematicCommand } from '../models/schematic-command';
@@ -37,14 +36,14 @@ export default class DockerCommand extends SchematicCommand {
 
   private schematicName = 'docker';
 
+  private collectionName = '@schematics/angular';
+
   public async initialize(options: any) {
     await super.initialize(options);
 
-    const collectionName = this.parseCollectionName(options);
-
     const schematicOptions = await this.getOptions({
       schematicName: this.schematicName,
-      collectionName,
+      collectionName: this.collectionName
     });
 
     this.options = this.options.concat(schematicOptions.options);
@@ -69,17 +68,10 @@ export default class DockerCommand extends SchematicCommand {
       options.skipGit = true;
     }
 
-    let collectionName: string;
-    if (options.collection) {
-      collectionName = options.collection;
-    } else {
-      collectionName = this.parseCollectionName(options);
-    }
-
     options = this.removeLocalOptions(options);
 
     return this.runSchematic({
-      collectionName: collectionName,
+      collectionName: this.collectionName,
       schematicName: this.schematicName,
       schematicOptions: options,
       debug: options.debug,
