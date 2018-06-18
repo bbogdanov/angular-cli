@@ -117,7 +117,6 @@ export default class DockerCommand extends SchematicCommand {
     const opts = Object.assign({}, options);
     delete opts.verbose;
     delete opts.collection;
-    delete opts.dryRun;
     delete opts.skipGit;
 
     return opts;
