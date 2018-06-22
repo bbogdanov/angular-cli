@@ -1,3 +1,4 @@
+import { Path } from './../../../angular_devkit/core/src/virtual-fs/path';
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -20,6 +21,7 @@ import { getWorkspace } from '../utility/config';
 import { parseName } from '../utility/parse-name';
 import { buildDefaultPath } from '../utility/project';
 import { Schema as ServiceOptions } from './schema';
+import { dirname } from 'path';
 
 export default function (options: ServiceOptions): Rule {
   return (host: Tree) => {
@@ -33,9 +35,7 @@ export default function (options: ServiceOptions): Rule {
       options.path = project.root + '/docker';
     }
 
-    const parsedPath = parseName(options.path, options.name);
-    options.name = parsedPath.name;
-    options.path = parsedPath.path;
+    options.path = dirname((options.path + '/') as Path);
 
     const templateSource = apply(url('./files'), [
       template({
@@ -43,7 +43,7 @@ export default function (options: ServiceOptions): Rule {
         'if-flat': (s: string) => options.flat ? '' : s,
         ...options,
       }),
-      move(parsedPath.path),
+      move(options.path),
     ]);
 
     return mergeWith(templateSource);
