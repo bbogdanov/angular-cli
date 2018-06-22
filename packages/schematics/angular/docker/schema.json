@@ -13,20 +13,56 @@
     },
     "name": {
       "type": "string",
-      "description": "The name of the application.",
+      "description": "The name of the component.",
       "$default": {
-        "$source": "argv",
-        "index": 0
+        "$source": "projectName"
+      },
+      "visible": false
+    },
+    "environment": {
+      "description": "Initialize for a particular environment.",
+      "alias": "env",
+      "type": "string",
+      "$default": {
+        "$source": "environment"
       }
     },
     "imageName": {
-      "description": "The name of the docker image.",
+      "description": "The image name to use for image pushes.",
       "type": "string"
     },
+    "useImage": {
+      "description": "Initializes the environment for deploying with an image, rather than performing a build.",
+      "type": "boolean",
+      "$default": false
+    },
+    "imageOrg": {
+      "description": "The org name to use for image pushes.",
+      "type": "string",
+      "$default": "temp"
+    },
+    "imageRegistry": {
+      "description": "The registry address to use for image pushes.",
+      "type": "string",
+      "$default": "registry.hub.docker.com"
+    },  
     "servicePort": {
       "description": "The port of the computer service.",
       "type": "number",
       "$default": 8000
+    },
+    "serviceName": {
+      "description": "The name of the service.",
+      "type": "string",
+      "$default": {
+        "$source": "projectName"
+      }
+    },
+    "machineName": {
+      "description": "The name of the machine.",
+      "alias": "machine",
+      "type": "string",
+      "$default": "my-machine"
     }
   },
   "required": [],
