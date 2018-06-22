@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 import { CommandScope, Option } from './../models/command';
 import { tags, terminal } from '@angular-devkit/core';
 import { SchematicCommand } from '../models/schematic-command';
@@ -8,7 +16,7 @@ export default class DockerCommand extends SchematicCommand {
   public readonly name = 'docker';
   public readonly description = 'Generates and/or modifies docker files.';
   public readonly scope = CommandScope.inProject;
-  public arguments: string[];
+  public arguments: string[] = [];
   public options: Option[] = [
     ...this.coreOptions,
     {
