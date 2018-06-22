@@ -23,9 +23,7 @@
       "description": "Initialize for a particular environment.",
       "alias": "env",
       "type": "string",
-      "$default": {
-        "$source": "environment"
-      }
+      "default": "default"
     },
     "imageName": {
       "description": "The image name to use for image pushes.",
@@ -34,22 +32,22 @@
     "useImage": {
       "description": "Initializes the environment for deploying with an image, rather than performing a build.",
       "type": "boolean",
-      "$default": false
+      "default": false
     },
     "imageOrg": {
       "description": "The org name to use for image pushes.",
       "type": "string",
-      "$default": "temp"
+      "default": "temp"
     },
     "imageRegistry": {
       "description": "The registry address to use for image pushes.",
       "type": "string",
-      "$default": "registry.hub.docker.com"
+      "default": "registry.hub.docker.com"
     },  
     "servicePort": {
       "description": "The port of the computer service.",
       "type": "number",
-      "$default": 8000
+      "default": 8000
     },
     "serviceName": {
       "description": "The name of the service.",
@@ -62,7 +60,7 @@
       "description": "The name of the machine.",
       "alias": "machine",
       "type": "string",
-      "$default": "my-machine"
+      "default": "my-machine"
     }
   },
   "required": [],
