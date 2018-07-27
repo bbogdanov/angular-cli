@@ -5,6 +5,6 @@ services:
       context: ./
       dockerfile: Dockerfile
       args:
-        environment: "<%= environment %>:"
+        environment: "<%= environment %>"
     ports:
       - "<%= servicePort %>:80"
