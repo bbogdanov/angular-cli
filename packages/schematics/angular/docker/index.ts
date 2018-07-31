@@ -18,8 +18,6 @@ import {
   url,
 } from '@angular-devkit/schematics';
 import { getWorkspace } from '../utility/config';
-import { parseName } from '../utility/parse-name';
-import { buildDefaultPath } from '../utility/project';
 import { Schema as ServiceOptions } from './schema';
 import { dirname } from 'path';
 
