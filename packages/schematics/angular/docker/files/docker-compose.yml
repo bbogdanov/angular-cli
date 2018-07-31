@@ -1,10 +1,15 @@
-version: "3"
+version: "2"
 services:
   application:
+    <% if (!imageName) { %>
     build:
-      context: ./
-      dockerfile: Dockerfile
-      args:
-        environment: "<%= environment %>"
+        context: ./
+        dockerfile: Dockerfile
+        args:
+          environment: "<%= environment %>"
+    <% } %>
+    <% if (imageName) { %>
+    image: <%= imageName %>
+    <% } %>
     ports:
-      - "<%= servicePort %>:80"
+      - "8000:80"
