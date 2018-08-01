@@ -10,7 +10,6 @@ import { CommandScope, Option } from './../models/command';
 import { tags, terminal } from '@angular-devkit/core';
 import { SchematicCommand } from '../models/schematic-command';
 import { getDefaultSchematicCollection } from '../utilities/config';
-import { getEngineHost, getCollection } from '../utilities/schematics';
 
 export default class DockerCommand extends SchematicCommand {
   public readonly name = 'docker';
@@ -25,26 +24,19 @@ export default class DockerCommand extends SchematicCommand {
       default: false,
       aliases: ['v'],
       description: 'Adds more details to output logging.',
-    },
-    {
-      name: 'imageName',
-      type: String,
-      default: this.project.name,
-      aliases: ['in'],
-      description: 'The name of the docker image.',
-    },
-    {
-      name: 'servicePort',
-      type: Number,
-      default: 8000,
-      aliases: ['sp'],
-      description: 'The port of the appcliation service.',
     }
   ];
 
   private schematicName = 'docker';
 
   private collectionName = '@schematics/angular';
+
+  private commands: Object[] = [
+    {
+      name: 'init',
+      type: 'schematic',
+    }
+  ];
 
   public async initialize(options: any) {
     await super.initialize(options);
@@ -89,36 +81,27 @@ export default class DockerCommand extends SchematicCommand {
   }
 
   public printHelp(options: any) {
-    const schematicName = options._[0];
-    if (schematicName) {
+    if(!options._.length) {
+      this.logger.info(`usage: ng docker <command>`);
+      this.commands.forEach((command: any) => {
+        this.logger.info(`    ${command.name}`);
+      });
+
+      this.logger.info(terminal.cyan(`\nng docker <command> --help`));
+      return;
+    }
+
+    const command = options._[0];
+    if (command && command.type === 'schematic') {
       const argDisplay = this.arguments && this.arguments.length > 0
         ? ' ' + this.arguments.filter(a => a !== 'schematic').map(a => `<${a}>`).join(' ')
         : '';
       const optionsDisplay = this.options && this.options.length > 0
         ? ' [options]'
         : '';
-      this.logger.info(`usage: ng docker ${schematicName}${argDisplay}${optionsDisplay}`);
+      this.logger.info(`usage: ng docker ${command}${argDisplay}${optionsDisplay}`);
       this.printHelpOptions(options);
-    } else {
-      this.printHelpUsage(this.name, this.arguments, this.options);
-      const engineHost = getEngineHost();
-      const [collectionName] = this.parseCollectionName(options);
-      const collection = getCollection(collectionName);
-      const schematicNames: string[] = engineHost.listSchematics(collection);
-      this.logger.info('Available schematics:');
-      schematicNames.forEach(schematicName => {
-        this.logger.info(`    ${schematicName}`);
-      });
-
-      this.logger.warn(`\nTo see help for a schematic run:`);
-      this.logger.info(terminal.cyan(`  ng generate <schematic> --help`));
     }
-  }
-
-  private parseCollectionName(options: any): string {
-    const collectionName = options.collection || options.c || getDefaultSchematicCollection();
-
-    return collectionName;
   }
 
   private removeLocalOptions(options: any): any {
