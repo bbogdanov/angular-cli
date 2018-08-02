@@ -1,4 +1,3 @@
-import { Path } from './../../../angular_devkit/core/src/virtual-fs/path';
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -18,10 +17,12 @@ import {
   url,
 } from '@angular-devkit/schematics';
 import { getWorkspace } from '../utility/config';
-import { Schema as ServiceOptions } from './schema';
+import { Schema as DockerOptions } from './schema';
 import { dirname } from 'path';
+import { Path } from './../../../angular_devkit/core/src/virtual-fs/path';
 
-export default function (options: ServiceOptions): Rule {
+
+export default function (options: DockerOptions): Rule {
   return (host: Tree) => {
     const workspace = getWorkspace(host);
     if (!options.project) {
@@ -29,7 +30,7 @@ export default function (options: ServiceOptions): Rule {
     }
     const project = workspace.projects[options.project];
 
-    if (options.path === undefined) {
+    if (options.path === undefined && project) {
       options.path = project.root + '/docker';
     }
 
