@@ -93,7 +93,8 @@ export default class DockerCommand extends SchematicCommand {
     }
 
     const command = options._[0];
-    if (command && command.type === 'schematic') {
+
+    if (command === 'init') {
       const argDisplay = this.arguments && this.arguments.length > 0
         ? ' ' + this.arguments.filter(a => a !== 'schematic').map(a => `<${a}>`).join(' ')
         : '';
