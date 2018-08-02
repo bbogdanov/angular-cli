@@ -16,10 +16,10 @@ import {
   template,
   url,
 } from '@angular-devkit/schematics';
-import { getWorkspace } from '../utility/config';
-import { Schema as DockerOptions } from './schema';
 import { dirname } from 'path';
+import { getWorkspace } from '../utility/config';
 import { Path } from './../../../angular_devkit/core/src/virtual-fs/path';
+import { Schema as DockerOptions } from './schema';
 
 
 export default function (options: DockerOptions): Rule {

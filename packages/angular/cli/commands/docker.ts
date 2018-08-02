@@ -6,11 +6,11 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import { CommandScope, Option } from './../models/command';
 import { tags, terminal } from '@angular-devkit/core';
 import { SchematicCommand } from '../models/schematic-command';
-import { getDefaultSchematicCollection } from '../utilities/config';
+import { CommandScope, Option } from './../models/command';
 
+// tslint:disable:no-global-tslint-disable no-any
 export default class DockerCommand extends SchematicCommand {
   public readonly name = 'docker';
   public readonly description = 'Generates and/or modifies docker files.';
@@ -24,7 +24,7 @@ export default class DockerCommand extends SchematicCommand {
       default: false,
       aliases: ['v'],
       description: 'Adds more details to output logging.',
-    }
+    },
   ];
 
   private schematicName = 'docker';
@@ -35,7 +35,7 @@ export default class DockerCommand extends SchematicCommand {
     {
       name: 'init',
       type: 'schematic',
-    }
+    },
   ];
 
   public async initialize(options: any) {
@@ -43,7 +43,7 @@ export default class DockerCommand extends SchematicCommand {
 
     const schematicOptions = await this.getOptions({
       schematicName: this.schematicName,
-      collectionName: this.collectionName
+      collectionName: this.collectionName,
     });
 
     this.options = this.options.concat(schematicOptions.options);
@@ -81,13 +81,14 @@ export default class DockerCommand extends SchematicCommand {
   }
 
   public printHelp(options: any) {
-    if(!options._.length) {
+    if (!options._.length) {
       this.logger.info(`usage: ng docker <command>`);
       this.commands.forEach((command: any) => {
         this.logger.info(`    ${command.name}`);
       });
 
       this.logger.info(terminal.cyan(`\nng docker <command> --help`));
+
       return;
     }
 

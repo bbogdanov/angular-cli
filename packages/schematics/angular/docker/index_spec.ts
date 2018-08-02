@@ -1,4 +1,3 @@
-import { environment } from './../../../../tests/@angular_devkit/build_angular/hello-world-app/src/environments/environment.prod';
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -8,9 +7,9 @@ import { environment } from './../../../../tests/@angular_devkit/build_angular/h
  */
 import { SchematicTestRunner, UnitTestTree } from '@angular-devkit/schematics/testing';
 import * as path from 'path';
+import { Schema as ApplicationOptions } from '../application/schema';
 import { Schema as WorkspaceOptions } from '../workspace/schema';
 import { Schema as DockerOptions } from './schema';
-import { Schema as ApplicationOptions } from '../application/schema';
 
 
 // tslint:disable:max-line-length
@@ -30,23 +29,13 @@ describe('Docker Schematic', () => {
     imageRegistry: 'registry.hub.docker.com',
     servicePort: 8000,
     serviceName: 'bar',
-    machineName: 'my-machine'
-  }
+    machineName: 'my-machine',
+  };
 
   const workspaceOptions: WorkspaceOptions = {
     name: 'workspace',
     newProjectRoot: 'projects',
     version: '6.0.0',
-  };
-
-  const appOptions: ApplicationOptions = {
-    name: 'bar',
-    inlineStyle: false,
-    inlineTemplate: false,
-    routing: false,
-    style: 'css',
-    skipTests: false,
-    skipPackageJson: false,
   };
 
   const initialWorkspaceAppOptions: ApplicationOptions = {
