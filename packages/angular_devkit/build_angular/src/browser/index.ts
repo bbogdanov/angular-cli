@@ -34,7 +34,7 @@ import {
   statsToString,
   statsWarningsToString,
 } from '../angular-cli-files/utilities/stats';
-import { addFileReplacements, normalizeAssetPatterns } from '../utils';
+import { defaultProgress, normalizeAssetPatterns, normalizeFileReplacements } from '../utils';
 import { AssetPatternObject, BrowserBuilderSchema, CurrentFileReplacement } from './schema';
 const webpackMerge = require('webpack-merge');
 
@@ -64,17 +64,13 @@ export class BrowserBuilder implements Builder<BrowserBuilderSchema> {
       concatMap(() => options.deleteOutputPath
         ? this._deleteOutputDir(root, normalize(options.outputPath), this.context.host)
         : of(null)),
-      concatMap(() => addFileReplacements(root, host, options.fileReplacements)),
+      concatMap(() => normalizeFileReplacements(options.fileReplacements, host, root)),
+      tap(fileReplacements => options.fileReplacements = fileReplacements),
       concatMap(() => normalizeAssetPatterns(
         options.assets, host, root, projectRoot, builderConfig.sourceRoot)),
       // Replace the assets in options with the normalized version.
       tap((assetPatternObjects => options.assets = assetPatternObjects)),
       concatMap(() => {
-        // Ensure Build Optimizer is only used with AOT.
-        if (options.buildOptimizer && !options.aot) {
-          throw new Error('The `--build-optimizer` option cannot be used without `--aot`.');
-        }
-
         let webpackConfig;
         try {
           webpackConfig = this.buildWebpackConfig(root, projectRoot, host,
@@ -118,6 +114,11 @@ export class BrowserBuilder implements Builder<BrowserBuilderSchema> {
     host: virtualFs.Host<fs.Stats>,
     options: NormalizedBrowserBuilderSchema,
   ) {
+    // Ensure Build Optimizer is only used with AOT.
+    if (options.buildOptimizer && !options.aot) {
+      throw new Error('The `--build-optimizer` option cannot be used without `--aot`.');
+    }
+
     let wco: WebpackConfigOptions<NormalizedBrowserBuilderSchema>;
 
     const tsConfigPath = getSystemPath(normalize(resolve(root, normalize(options.tsConfig))));
@@ -136,6 +137,8 @@ export class BrowserBuilder implements Builder<BrowserBuilderSchema> {
       tsConfigPath,
       supportES2015,
     };
+
+    wco.buildOptions.progress = defaultProgress(wco.buildOptions.progress);
 
     const webpackConfigs: {}[] = [
       getCommonConfig(wco),

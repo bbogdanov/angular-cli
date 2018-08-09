@@ -5,8 +5,10 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+// tslint:disable:no-big-function
+
 import { normalize, virtualFs } from '@angular-devkit/core';
-import { HostTree, VirtualTree } from '@angular-devkit/schematics';
+import { HostTree } from '@angular-devkit/schematics';
 import { SchematicTestRunner, UnitTestTree } from '@angular-devkit/schematics/testing';
 import { map } from 'rxjs/operators';
 import * as semver from 'semver';
@@ -36,7 +38,7 @@ describe('@schematics/update', () => {
     '@schematics/update', __dirname + '/../collection.json',
   );
   let host: virtualFs.test.TestHost;
-  let appTree: UnitTestTree = new UnitTestTree(new VirtualTree());
+  let appTree: UnitTestTree = new UnitTestTree(new HostTree());
 
   beforeEach(() => {
     host = new virtualFs.test.TestHost({
@@ -145,8 +147,7 @@ describe('@schematics/update', () => {
     );
 
     schematicRunner.runSchematicAsync('update', {
-      packages: ['@angular/core'],
-      next: true,
+      packages: ['@angular/core@^6.0.0'],
     }, appTree).pipe(
       map(tree => {
         const packageJson = JSON.parse(tree.readContent('/package.json'));
@@ -192,8 +193,7 @@ describe('@schematics/update', () => {
     );
 
     schematicRunner.runSchematicAsync('update', {
-      packages: ['@angular/core'],
-      next: true,
+      packages: ['@angular/core@^6.0.0'],
     }, appTree).pipe(
       map(tree => {
         const packageJson = JSON.parse(tree.readContent('/package.json'));

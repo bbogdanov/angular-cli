@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// tslint:disable:no-any
+// tslint:disable:no-any no-big-function
 import { path } from '../path';
 import { fileBuffer } from './buffer';
 import { CordHost } from './record';
@@ -97,6 +97,29 @@ describe('CordHost', () => {
     expect(target.$exists('/hello')).toBe(false);
     expect(target.$exists('/blue')).toBe(false);
     expect(target.$exists('/red')).toBe(true);
+
+    done();
+  });
+
+  it('works (create -> rename (identity))', done => {
+    const base = new TestHost({
+      '/hello': 'world',
+    });
+
+    const host = new CordHost(base);
+    host.write(path`/blue`, fileBuffer`hi`).subscribe(undefined, done.fail);
+    host.rename(path`/blue`, path`/blue`).subscribe(undefined, done.fail);
+
+    const target = new TestHost();
+    host.commit(target).subscribe(undefined, done.fail);
+
+    // Check that there's only 1 write done.
+    expect(target.records.filter(x => mutatingTestRecord.includes(x.kind))).toEqual([
+      { kind: 'write', path: path`/blue` },
+    ]);
+
+    expect(target.$exists('/hello')).toBe(false);
+    expect(target.$exists('/blue')).toBe(true);
 
     done();
   });

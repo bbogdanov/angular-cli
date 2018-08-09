@@ -35,7 +35,6 @@ import { latestVersions } from '../utility/latest-versions';
 import { validateProjectName } from '../utility/validation';
 import { Schema as LibraryOptions } from './schema';
 
-
 interface UpdateJsonFn<T> {
   (obj: T): T | void;
 }
@@ -107,7 +106,7 @@ function addDependenciesToPackageJson() {
       {
         type: NodeDependencyType.Dev,
         name: 'ng-packagr',
-        version: '^3.0.0',
+        version: '^4.0.0',
       },
       {
         type: NodeDependencyType.Dev,
@@ -138,17 +137,12 @@ function addAppToWorkspaceFile(options: LibraryOptions, workspace: WorkspaceSche
     sourceRoot: `${projectRoot}/src`,
     projectType: 'library',
     prefix: options.prefix || 'lib',
-    architect: {
+    targets: {
       build: {
         builder: '@angular-devkit/build-ng-packagr:build',
         options: {
           tsConfig: `${projectRoot}/tsconfig.lib.json`,
           project: `${projectRoot}/ng-package.json`,
-        },
-        configurations: {
-          production: {
-            project: `${projectRoot}/ng-package.prod.json`,
-          },
         },
       },
       test: {
@@ -251,7 +245,7 @@ export default function (options: LibraryOptions): Rule {
         project: options.name,
       }),
       (_tree: Tree, context: SchematicContext) => {
-        if (!options.skipPackageJson) {
+        if (!options.skipPackageJson && !options.skipInstall) {
           context.addTask(new NodePackageInstallTask());
         }
       },

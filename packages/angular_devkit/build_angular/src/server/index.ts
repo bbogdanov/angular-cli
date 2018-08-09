@@ -16,7 +16,7 @@ import { WebpackBuilder } from '@angular-devkit/build-webpack';
 import { Path, getSystemPath, normalize, resolve, virtualFs } from '@angular-devkit/core';
 import { Stats } from 'fs';
 import { Observable, concat, of } from 'rxjs';
-import { concatMap, last } from 'rxjs/operators';
+import { concatMap, last, tap } from 'rxjs/operators';
 import * as ts from 'typescript'; // tslint:disable-line:no-implicit-dependencies
 import { WebpackConfigOptions } from '../angular-cli-files/models/build-options';
 import {
@@ -30,7 +30,7 @@ import {
 import { readTsconfig } from '../angular-cli-files/utilities/read-tsconfig';
 import { requireProjectModule } from '../angular-cli-files/utilities/require-project-module';
 import { getBrowserLoggingCb } from '../browser';
-import { addFileReplacements } from '../utils';
+import { defaultProgress, normalizeFileReplacements } from '../utils';
 import { BuildWebpackServerSchema } from './schema';
 const webpackMerge = require('webpack-merge');
 
@@ -51,7 +51,8 @@ export class ServerBuilder implements Builder<BuildWebpackServerSchema> {
       concatMap(() => options.deleteOutputPath
         ? this._deleteOutputDir(root, normalize(options.outputPath), this.context.host)
         : of(null)),
-      concatMap(() => addFileReplacements(root, host, options.fileReplacements)),
+        concatMap(() => normalizeFileReplacements(options.fileReplacements, host, root)),
+        tap(fileReplacements => options.fileReplacements = fileReplacements),
       concatMap(() => {
         const webpackConfig = this.buildWebpackConfig(root, projectRoot, host, options);
 
@@ -97,6 +98,8 @@ export class ServerBuilder implements Builder<BuildWebpackServerSchema> {
       supportES2015,
     };
 
+    wco.buildOptions.progress = defaultProgress(wco.buildOptions.progress);
+
     const webpackConfigs: {}[] = [
       getCommonConfig(wco),
       getServerConfig(wco),
@@ -106,8 +109,8 @@ export class ServerBuilder implements Builder<BuildWebpackServerSchema> {
 
     if (wco.buildOptions.main || wco.buildOptions.polyfills) {
       const typescriptConfigPartial = wco.buildOptions.aot
-        ? getAotConfig(wco, host as virtualFs.Host<Stats>)
-        : getNonAotConfig(wco, host as virtualFs.Host<Stats>);
+        ? getAotConfig(wco, host)
+        : getNonAotConfig(wco, host);
       webpackConfigs.push(typescriptConfigPartial);
     }
 

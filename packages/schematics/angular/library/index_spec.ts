@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+// tslint:disable:no-big-function
 import { SchematicTestRunner, UnitTestTree } from '@angular-devkit/schematics/testing';
 import * as path from 'path';
 import { getFileContent } from '../../angular/utility/test';
@@ -28,6 +29,7 @@ describe('Library Schematic', () => {
     entryFile: 'my_index',
     skipPackageJson: false,
     skipTsConfig: false,
+    skipInstall: false,
   };
   const workspaceOptions: WorkspaceOptions = {
     name: 'workspace',
@@ -73,7 +75,6 @@ describe('Library Schematic', () => {
     const fileContent = getJsonFileContent(tree, '/projects/foo/ng-package.json');
     expect(fileContent.lib).toBeDefined();
     expect(fileContent.lib.entryFile).toEqual('src/my_index.ts');
-    expect(fileContent.deleteDestPath).toEqual(false);
     expect(fileContent.dest).toEqual('../../dist/foo');
   });
 
@@ -138,7 +139,7 @@ describe('Library Schematic', () => {
       const tree = schematicRunner.runSchematic('library', defaultOptions, workspaceTree);
 
       const packageJson = getJsonFileContent(tree, 'package.json');
-      expect(packageJson.devDependencies['ng-packagr']).toEqual('^3.0.0');
+      expect(packageJson.devDependencies['ng-packagr']).toEqual('^4.0.0');
       expect(packageJson.devDependencies['@angular-devkit/build-ng-packagr'])
         .toEqual(latestVersions.DevkitBuildNgPackagr);
     });

@@ -10,6 +10,7 @@ import { JsonObject, logging } from '@angular-devkit/core';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as semver from 'semver';
+import { packages } from '../lib/packages';
 
 const changelogTemplate = require('./templates/changelog').default;
 
@@ -39,7 +40,7 @@ export default function(args: ChangelogOptions, logger: logging.Logger) {
     || ''
   ).trim();
 
-  new Promise((resolve) => {
+  return new Promise((resolve) => {
     (gitRawCommits({
       from: args.from,
       to: args.to || 'HEAD',
@@ -86,6 +87,7 @@ export default function(args: ChangelogOptions, logger: logging.Logger) {
         ...args,
         include: (x: string, v: {}) => require('./' + path.join('templates', x)).default(v),
         commits,
+        packages,
       });
 
       if (args.stdout || !githubToken) {

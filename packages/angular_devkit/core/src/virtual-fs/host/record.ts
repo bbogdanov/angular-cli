@@ -271,11 +271,15 @@ export class CordHost extends SimpleMemoryHost {
     ).pipe(
       toArray(),
       switchMap(([existTo, existFrom]) => {
-        if (existTo) {
-          return throwError(new FileAlreadyExistException(to));
-        }
         if (!existFrom) {
           return throwError(new FileDoesNotExistException(from));
+        }
+        if (from === to) {
+          return of();
+        }
+
+        if (existTo) {
+          return throwError(new FileAlreadyExistException(to));
         }
 
         // If we're renaming a file that's been created, shortcircuit to creating the `to` path.
@@ -351,7 +355,7 @@ export class CordHost extends SimpleMemoryHost {
   exists(path: Path): Observable<boolean> {
     return this._exists(path)
       ? of(true)
-      : (this.willDelete(path) ? of(false) : this._back.exists(path));
+      : ((this.willDelete(path) || this.willRename(path)) ? of(false) : this._back.exists(path));
   }
   isDirectory(path: Path): Observable<boolean> {
     return this._exists(path) ? super.isDirectory(path) : this._back.isDirectory(path);
@@ -359,7 +363,7 @@ export class CordHost extends SimpleMemoryHost {
   isFile(path: Path): Observable<boolean> {
     return this._exists(path)
       ? super.isFile(path)
-      : (this.willDelete(path) ? of(false) : this._back.isFile(path));
+      : ((this.willDelete(path) || this.willRename(path)) ? of(false) : this._back.isFile(path));
   }
 
   stat(path: Path) {

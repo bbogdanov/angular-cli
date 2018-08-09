@@ -6,12 +6,11 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import { normalize } from '@angular-devkit/core';
-import { FileOperator, Rule } from '../engine/interface';
-import { FileEntry } from '../tree/interface';
-import { forEach } from './base';
+import { Rule } from '../engine/interface';
+import { noop } from './base';
 
 
-export function moveOp(from: string, to?: string): FileOperator {
+export function move(from: string, to?: string): Rule {
   if (to === undefined) {
     to = from;
     from = '/';
@@ -20,19 +19,13 @@ export function moveOp(from: string, to?: string): FileOperator {
   const fromPath = normalize('/' + from);
   const toPath = normalize('/' + to);
 
-  return (entry: FileEntry) => {
-    if (entry.path.startsWith(fromPath)) {
-      return {
-        content: entry.content,
-        path: normalize(toPath + '/' + entry.path.substr(fromPath.length)),
-      };
+  if (fromPath === toPath) {
+    return noop;
+  }
+
+  return tree => tree.visit(path => {
+    if (path.startsWith(fromPath)) {
+      tree.rename(path, toPath + '/' + path.substr(fromPath.length));
     }
-
-    return entry;
-  };
-}
-
-
-export function move(from: string, to?: string): Rule {
-  return forEach(moveOp(from, to));
+  });
 }

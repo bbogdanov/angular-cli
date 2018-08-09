@@ -67,6 +67,13 @@ const init: any = (config: any, emitter: any, customFileHandlers: any) => {
   failureCb = config.buildWebpack.failureCb;
 
   config.reporters.unshift('@angular-devkit/build-angular--event-reporter');
+
+  // When using code-coverage, auto-add coverage-istanbul.
+  config.reporters = config.reporters || [];
+  if (options.codeCoverage && config.reporters.indexOf('coverage-istanbul') === -1) {
+    config.reporters.unshift('coverage-istanbul');
+  }
+
   // Add a reporter that fixes sourcemap urls.
   if (options.sourceMap) {
     config.reporters.unshift('@angular-devkit/build-angular--sourcemap-reporter');
@@ -91,19 +98,21 @@ const init: any = (config: any, emitter: any, customFileHandlers: any) => {
     publicPath: '/_karma_webpack_/',
   };
 
-  // Finish Karma run early in case of compilation error.
-  const compilationErrorCb = () => emitter.emit('run_complete', [], { exitCode: 1 });
+  const compilationErrorCb = (error: string | undefined, errors: string[]) => {
+    // Notify potential listeners of the compile error
+    emitter.emit('compile_error', errors);
+
+    // Finish Karma run early in case of compilation error.
+    emitter.emit('run_complete', [], { exitCode: 1 });
+
+    // Unblock any karma requests (potentially started using `karma run`)
+    unblock();
+  }
   webpackConfig.plugins.push(new KarmaWebpackFailureCb(compilationErrorCb));
 
   // Use existing config if any.
   config.webpack = Object.assign(webpackConfig, config.webpack);
   config.webpackMiddleware = Object.assign(webpackMiddlewareConfig, config.webpackMiddleware);
-
-  // When using code-coverage, auto-add coverage-istanbul.
-  config.reporters = config.reporters || [];
-  if (options.codeCoverage && config.reporters.indexOf('coverage-istanbul') === -1) {
-    config.reporters.push('coverage-istanbul');
-  }
 
   // Our custom context and debug files list the webpack bundles directly instead of using
   // the karma files array.
@@ -126,7 +135,7 @@ const init: any = (config: any, emitter: any, customFileHandlers: any) => {
     // we can override the file watcher instead.
     webpackConfig.plugins.unshift({
       apply: (compiler: any) => { // tslint:disable-line:no-any
-        compiler.plugin('after-environment', () => {
+        compiler.hooks.afterEnvironment.tap('karma', () => {
           compiler.watchFileSystem = { watch: () => { } };
         });
       },
@@ -147,24 +156,32 @@ const init: any = (config: any, emitter: any, customFileHandlers: any) => {
     throw e;
   }
 
-  ['invalid', 'watch-run', 'run'].forEach(function (name) {
-    compiler.plugin(name, function (_: any, callback: () => void) {
-      isBlocked = true;
+  function handler(callback?: () => void) {
+    isBlocked = true;
 
-      if (typeof callback === 'function') {
-        callback();
-      }
-    });
-  });
+    if (typeof callback === 'function') {
+      callback();
+    }
+  }
 
-  compiler.plugin('done', (stats: any) => {
+  compiler.hooks.invalid.tap('karma', () => handler());
+
+  compiler.hooks.watchRun.tapAsync('karma', (_: any, callback: () => void) => handler(callback));
+
+  compiler.hooks.run.tapAsync('karma', (_: any, callback: () => void) => handler(callback));
+
+  function unblock(){
+    isBlocked = false;
+    blocked.forEach((cb) => cb());
+    blocked = [];
+  }
+
+  compiler.hooks.done.tap('karma', (stats: any) => {
     // Don't refresh karma when there are webpack errors.
     if (stats.compilation.errors.length === 0) {
       emitter.refreshFiles();
-      isBlocked = false;
-      blocked.forEach((cb) => cb());
-      blocked = [];
     }
+    unblock();
   });
 
   webpackMiddleware = new webpackDevMiddleware(compiler, webpackMiddlewareConfig);
@@ -223,6 +240,9 @@ const eventReporter: any = function (this: any, baseReporterDecorator: any) {
       failureCb && failureCb();
     }
   }
+
+  // avoid duplicate failure message
+  this.specFailure = () => {};
 };
 
 eventReporter.$inject = ['baseReporterDecorator'];
@@ -254,6 +274,12 @@ const sourceMapReporter: any = function (this: any, baseReporterDecorator: any, 
       });
     }
   };
+
+  // avoid duplicate complete message
+  this.onRunComplete = () => {};
+
+  // avoid duplicate failure message
+  this.specFailure = () => {};
 };
 
 sourceMapReporter.$inject = ['baseReporterDecorator', 'config'];

@@ -90,7 +90,7 @@ function migrateKarmaConfiguration(config: CliConfig): Rule {
           `dir: require('path').join(__dirname, 'coverage'), reports`);
         host.overwrite(karmaPath, content);
       }
-    } catch (e) { }
+    } catch { }
 
     return host;
   };
@@ -119,9 +119,9 @@ function migrateConfiguration(oldConfig: CliConfig, logger: logging.LoggerApi): 
     if (schematicsConfig !== null) {
       config.schematics = schematicsConfig;
     }
-    const architectConfig = extractArchitectConfig(oldConfig);
-    if (architectConfig !== null) {
-      config.architect = architectConfig;
+    const targetsConfig = extractTargetsConfig(oldConfig);
+    if (targetsConfig !== null) {
+      config.targets = targetsConfig;
     }
 
     context.logger.info(`Removing old config file (${oldConfigPath})`);
@@ -213,10 +213,13 @@ function extractSchematicsConfig(config: CliConfig): JsonObject | null {
   return schematicConfigs;
 }
 
-function extractArchitectConfig(_config: CliConfig): JsonObject | null {
+function extractTargetsConfig(_config: CliConfig): JsonObject | null {
   return null;
 }
 
+// This function is too big, but also really hard to refactor properly as the whole config
+// depends on all parts of the config.
+// tslint:disable-next-line:no-big-function
 function extractProjectsConfig(
   config: CliConfig, tree: Tree, logger: logging.LoggerApi,
 ): JsonObject {
@@ -254,6 +257,9 @@ function extractProjectsConfig(
   const serverApps = apps.filter(app => app.platform === 'server');
 
   const projectMap = browserApps
+    // This function is too big, but also really hard to refactor properly as the whole config
+    // depends on all parts of the config.
+    // tslint:disable-next-line:no-big-function
     .map((app, idx) => {
       const defaultAppName = idx === 0 ? defaultAppNamePrefix : `${defaultAppNamePrefix}${idx}`;
       const name = app.name || defaultAppName;
@@ -292,11 +298,25 @@ function extractProjectsConfig(
         const environments = app.environments;
         const serviceWorker = app.serviceWorker;
 
+        const productionPartial = {
+          optimization: true,
+          outputHashing: 'all',
+          sourceMap: false,
+          extractCss: true,
+          namedChunks: false,
+          aot: true,
+          extractLicenses: true,
+          vendorChunk: false,
+          buildOptimizer: true,
+          ...(serviceWorker ? {serviceWorker: true, ngswConfigPath: '/src/ngsw-config.json'} : {}),
+          ...(app.budgets ? { budgets: app.budgets as JsonArray} : {}),
+        };
+
         if (!environments) {
-          return {};
+          return { production: productionPartial };
         }
 
-        return Object.keys(environments).reduce((acc, environment) => {
+        const configurations = Object.keys(environments).reduce((acc, environment) => {
           if (source === environments[environment]) {
             return acc;
           }
@@ -319,31 +339,8 @@ function extractProjectsConfig(
             configurationName = environment;
           }
 
-          let swConfig: JsonObject | null = null;
-          if (serviceWorker) {
-            swConfig = {
-              serviceWorker: true,
-              ngswConfigPath: '/src/ngsw-config.json',
-            };
-          }
-
           acc[configurationName] = {
-            ...(isProduction
-              ? {
-                optimization: true,
-                outputHashing: 'all',
-                sourceMap: false,
-                extractCss: true,
-                namedChunks: false,
-                aot: true,
-                extractLicenses: true,
-                vendorChunk: false,
-                buildOptimizer: true,
-              }
-              : {}
-            ),
-            ...(isProduction && swConfig ? swConfig : {}),
-            ...(isProduction && app.budgets ? { budgets: app.budgets as JsonArray } : {}),
+            ...(isProduction ? productionPartial : {}),
             fileReplacements: [
               {
                 replace: `${app.root}/${source}`,
@@ -354,6 +351,12 @@ function extractProjectsConfig(
 
           return acc;
         }, {} as JsonObject);
+
+        if (!configurations['production']) {
+          configurations['production'] = { ...productionPartial };
+        }
+
+        return configurations;
       }
 
       function _serveConfigurations(): JsonObject {
@@ -362,11 +365,11 @@ function extractProjectsConfig(
         if (!environments) {
           return {};
         }
-        if (!architect) {
+        if (!targets) {
           throw new Error();
         }
 
-        const configurations = (architect.build as JsonObject).configurations as JsonObject;
+        const configurations = (targets.build as JsonObject).configurations as JsonObject;
 
         return Object.keys(configurations).reduce((acc, environment) => {
           acc[environment] = { browserTarget: `${name}:build:${environment}` };
@@ -398,8 +401,8 @@ function extractProjectsConfig(
         projectType: 'application',
       };
 
-      const architect: JsonObject = {};
-      project.architect = architect;
+      const targets: JsonObject = {};
+      project.targets = targets;
 
         // Browser target
       const buildOptions: JsonObject = {
@@ -429,7 +432,7 @@ function extractProjectsConfig(
       buildOptions.assets = (app.assets || []).map(_mapAssets).filter(x => !!x);
       buildOptions.styles = (app.styles || []).map(_extraEntryMapper);
       buildOptions.scripts = (app.scripts || []).map(_extraEntryMapper);
-      architect.build = {
+      targets.build = {
         builder: `${builderPackage}:browser`,
         options: buildOptions,
         configurations: _buildConfigurations(),
@@ -440,7 +443,7 @@ function extractProjectsConfig(
         browserTarget: `${name}:build`,
         ...serveDefaults,
       };
-      architect.serve = {
+      targets.serve = {
         builder: `${builderPackage}:dev-server`,
         options: serveOptions,
         configurations: _serveConfigurations(),
@@ -448,7 +451,7 @@ function extractProjectsConfig(
 
       // Extract target
       const extractI18nOptions: JsonObject = { browserTarget: `${name}:build` };
-      architect['extract-i18n'] = {
+      targets['extract-i18n'] = {
         builder: `${builderPackage}:extract-i18n`,
         options: extractI18nOptions,
       };
@@ -475,7 +478,7 @@ function extractProjectsConfig(
       testOptions.assets = (app.assets || []).map(_mapAssets).filter(x => !!x);
 
       if (karmaConfig) {
-        architect.test = {
+        targets.test = {
           builder: `${builderPackage}:karma`,
           options: testOptions,
         };
@@ -521,7 +524,7 @@ function extractProjectsConfig(
         tsConfig: removeDupes(tsConfigs).filter(t => t.indexOf('e2e') === -1),
         exclude: removeDupes(excludes),
       };
-      architect.lint = {
+      targets.lint = {
           builder: `${builderPackage}:tslint`,
           options: lintOptions,
         };
@@ -540,7 +543,7 @@ function extractProjectsConfig(
           builder: '@angular-devkit/build-angular:server',
           options: serverOptions,
         };
-        architect.server = serverTarget;
+        targets.server = serverTarget;
       }
       const e2eProject: JsonObject = {
         root: join(projectRoot, 'e2e'),
@@ -548,7 +551,7 @@ function extractProjectsConfig(
         projectType: 'application',
       };
 
-      const e2eArchitect: JsonObject = {};
+      const e2eTargets: JsonObject = {};
 
       // tslint:disable-next-line:max-line-length
       const protractorConfig = config && config.e2e && config.e2e.protractor && config.e2e.protractor.config
@@ -563,7 +566,7 @@ function extractProjectsConfig(
         options: e2eOptions,
       };
 
-      e2eArchitect.e2e = e2eTarget;
+      e2eTargets.e2e = e2eTarget;
       const e2eLintOptions: JsonObject = {
         tsConfig: removeDupes(tsConfigs).filter(t => t.indexOf('e2e') !== -1),
         exclude: removeDupes(excludes),
@@ -572,9 +575,9 @@ function extractProjectsConfig(
         builder: `${builderPackage}:tslint`,
         options: e2eLintOptions,
       };
-      e2eArchitect.lint = e2eLintTarget;
+      e2eTargets.lint = e2eLintTarget;
       if (protractorConfig) {
-        e2eProject.architect = e2eArchitect;
+        e2eProject.targets = e2eTargets;
       }
 
       return { name, project, e2eProject };
@@ -724,6 +727,60 @@ function updateTsLintConfig(): Rule {
   };
 }
 
+function updateRootTsConfig(): Rule {
+  return (host: Tree, context: SchematicContext) => {
+    const tsConfigPath = '/tsconfig.json';
+    const buffer = host.read(tsConfigPath);
+    if (!buffer) {
+      return;
+    }
+
+    const tsCfgAst = parseJsonAst(buffer.toString(), JsonParseMode.Loose);
+    if (tsCfgAst.kind !== 'object') {
+      throw new SchematicsException('Invalid root tsconfig. Was expecting an object');
+    }
+
+    const compilerOptionsAstNode = findPropertyInAstObject(tsCfgAst, 'compilerOptions');
+    if (!compilerOptionsAstNode || compilerOptionsAstNode.kind != 'object') {
+      throw new SchematicsException(
+        'Invalid root tsconfig "compilerOptions" property; expected an object.',
+      );
+    }
+
+    if (
+      findPropertyInAstObject(compilerOptionsAstNode, 'baseUrl') &&
+      findPropertyInAstObject(compilerOptionsAstNode, 'module')
+    ) {
+      return host;
+    }
+
+    const compilerOptions = compilerOptionsAstNode.value;
+    const { baseUrl = './', module = 'es2015'} = compilerOptions;
+
+    const validBaseUrl = ['./', '', '.'];
+    if (!validBaseUrl.includes(baseUrl as string)) {
+      const formattedBaseUrl = validBaseUrl.map(x => `'${x}'`).join(', ');
+      context.logger.warn(tags.oneLine
+        `Root tsconfig option 'baseUrl' is not one of: ${formattedBaseUrl}.
+        This might cause unexpected behaviour when generating libraries.`,
+      );
+    }
+
+    if (module !== 'es2015') {
+      context.logger.warn(
+        `Root tsconfig option 'module' is not 'es2015'. This might cause unexpected behaviour.`,
+      );
+    }
+
+    compilerOptions.module = module;
+    compilerOptions.baseUrl = baseUrl;
+
+    host.overwrite(tsConfigPath, JSON.stringify(tsCfgAst.value, null, 2));
+
+    return host;
+  };
+}
+
 export default function (): Rule {
   return (host: Tree, context: SchematicContext) => {
     if (host.exists('/.angular.json') || host.exists('/angular.json')) {
@@ -748,6 +805,7 @@ export default function (): Rule {
       migrateConfiguration(config, context.logger),
       updateSpecTsConfig(config),
       updatePackageJson(config),
+      updateRootTsConfig(),
       updateTsLintConfig(),
       (host: Tree, context: SchematicContext) => {
         context.logger.warn(tags.oneLine`Some configuration options have been changed,

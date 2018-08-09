@@ -171,6 +171,11 @@ export default function (args: ParsedArgs, logger: logging.Logger) {
     runner.env.addReporter(new IstanbulReporter());
   }
 
+  if (args.large) {
+    // Default timeout for large specs is 2.5 minutes.
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = 150000;
+  }
+
   // Run the tests.
   const allTests =
     glob.sync(regex)
@@ -202,6 +207,13 @@ export default function (args: ParsedArgs, logger: logging.Logger) {
       }));
 
     logger.info(`Found ${tests.length} spec files, out of ${allTests.length}.`);
+  }
+
+  if (args.shard !== undefined) {
+    // Remove tests that are not part of this shard.
+    const shardId = args['shard'];
+    const nbShards = args['nb-shards'] || 2;
+    tests = tests.filter((name, i) => (i % nbShards) == shardId);
   }
 
   return new Promise(resolve => {

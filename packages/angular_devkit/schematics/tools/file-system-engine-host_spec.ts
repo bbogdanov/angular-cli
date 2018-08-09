@@ -5,10 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// tslint:disable:no-any
-// tslint:disable:no-implicit-dependencies
+// tslint:disable:no-any no-big-function no-implicit-dependencies
 import { normalize, virtualFs } from '@angular-devkit/core';
-import { FileSystemTree, HostSink, SchematicEngine } from '@angular-devkit/schematics';
+import { HostSink, HostTree, SchematicEngine } from '@angular-devkit/schematics';
 import { FileSystemEngineHost } from '@angular-devkit/schematics/tools';
 import * as path from 'path';
 import { of as observableOf } from 'rxjs';
@@ -18,7 +17,7 @@ describe('FileSystemEngineHost', () => {
   const devkitRoot = (global as any)._DevKitRoot;
   const root = path.join(
     devkitRoot,
-    'tests/@angular_devkit/schematics/tools/file-system-engine-host',
+    'tests/angular_devkit/schematics/tools/file-system-engine-host',
   );
 
   it('works', () => {
@@ -40,6 +39,45 @@ describe('FileSystemEngineHost', () => {
 
     expect(schematic1).not.toBeNull();
     expect(schematic1.description.name).toBe('schematic1');
+  });
+
+  it('understands multiple aliases for a single schematic', () => {
+    const engineHost = new FileSystemEngineHost(root);
+    const engine = new SchematicEngine(engineHost);
+
+    const testCollection = engine.createCollection('aliases-many');
+
+    const schematic1 = engine.createSchematic('alias1', testCollection);
+    expect(schematic1).not.toBeNull();
+    expect(schematic1.description.name).toBe('schematic1');
+
+    const schematic2 = engine.createSchematic('alias2', testCollection);
+    expect(schematic2).not.toBeNull();
+    expect(schematic2.description.name).toBe('schematic1');
+
+    const schematic3 = engine.createSchematic('alias3', testCollection);
+    expect(schematic3).not.toBeNull();
+    expect(schematic3.description.name).toBe('schematic1');
+  });
+
+
+  it('allows dupe aliases for a single schematic', () => {
+    const engineHost = new FileSystemEngineHost(root);
+    const engine = new SchematicEngine(engineHost);
+
+    const testCollection = engine.createCollection('aliases-dupe');
+
+    const schematic1 = engine.createSchematic('alias1', testCollection);
+    expect(schematic1).not.toBeNull();
+    expect(schematic1.description.name).toBe('schematic1');
+
+    const schematic2 = engine.createSchematic('alias2', testCollection);
+    expect(schematic2).not.toBeNull();
+    expect(schematic2.description.name).toBe('schematic1');
+
+    const schematic3 = engine.createSchematic('alias3', testCollection);
+    expect(schematic3).not.toBeNull();
+    expect(schematic3.description.name).toBe('schematic1');
   });
 
   it('lists schematics but not aliases', () => {
@@ -253,7 +291,7 @@ describe('FileSystemEngineHost', () => {
     const collection = engine.createCollection('extra-properties');
     const schematic = collection.createSchematic('schematic1');
 
-    schematic.call({}, observableOf(new FileSystemTree(host))).toPromise()
+    schematic.call({}, observableOf(new HostTree(host))).toPromise()
       .then(tree => {
         return new HostSink(host).commit(tree).toPromise();
       })

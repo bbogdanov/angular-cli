@@ -25,7 +25,7 @@ import * as WebpackDevServer from 'webpack-dev-server';
 import { checkPort } from '../angular-cli-files/utilities/check-port';
 import { BrowserBuilder, NormalizedBrowserBuilderSchema, getBrowserLoggingCb } from '../browser/';
 import { BrowserBuilderSchema } from '../browser/schema';
-import { addFileReplacements, normalizeAssetPatterns } from '../utils';
+import { normalizeAssetPatterns, normalizeFileReplacements } from '../utils';
 const opn = require('opn');
 
 
@@ -51,6 +51,7 @@ export interface DevServerBuilderOptions {
   optimization?: boolean;
   aot?: boolean;
   sourceMap?: boolean;
+  vendorSourceMap?: boolean;
   evalSourceMap?: boolean;
   vendorChunk?: boolean;
   commonChunk?: boolean;
@@ -78,14 +79,14 @@ export class DevServerBuilder implements Builder<DevServerBuilderOptions> {
       tap((port) => options.port = port),
       concatMap(() => this._getBrowserOptions(options)),
       tap((opts) => browserOptions = opts),
-      concatMap(() => addFileReplacements(root, host, browserOptions.fileReplacements)),
+      concatMap(() => normalizeFileReplacements(browserOptions.fileReplacements, host, root)),
+      tap(fileReplacements => browserOptions.fileReplacements = fileReplacements),
       concatMap(() => normalizeAssetPatterns(
         browserOptions.assets, host, root, projectRoot, builderConfig.sourceRoot)),
       // Replace the assets in options with the normalized version.
       tap((assetPatternObjects => browserOptions.assets = assetPatternObjects)),
       concatMap(() => {
-        const browserBuilder = new BrowserBuilder(this.context);
-        const webpackConfig = browserBuilder.buildWebpackConfig(
+        const webpackConfig = this.buildWebpackConfig(
           root, projectRoot, host, browserOptions as NormalizedBrowserBuilderSchema);
 
         let webpackDevServerConfig: WebpackDevServer.Configuration;
@@ -291,13 +292,13 @@ export class DevServerBuilder implements Builder<DevServerBuilderOptions> {
     let sslKey: string | undefined = undefined;
     let sslCert: string | undefined = undefined;
     if (options.sslKey) {
-      const keyPath = path.resolve(root, options.sslKey as string);
+      const keyPath = path.resolve(root, options.sslKey);
       if (existsSync(keyPath)) {
         sslKey = readFileSync(keyPath, 'utf-8');
       }
     }
     if (options.sslCert) {
-      const certPath = path.resolve(root, options.sslCert as string);
+      const certPath = path.resolve(root, options.sslCert);
       if (existsSync(certPath)) {
         sslCert = readFileSync(certPath, 'utf-8');
       }
@@ -399,6 +400,8 @@ export class DevServerBuilder implements Builder<DevServerBuilderOptions> {
       ...(options.optimization !== undefined ? { optimization: options.optimization } : {}),
       ...(options.aot !== undefined ? { aot: options.aot } : {}),
       ...(options.sourceMap !== undefined ? { sourceMap: options.sourceMap } : {}),
+      ...(options.vendorSourceMap !== undefined ?
+         { vendorSourceMap: options.vendorSourceMap } : {}),
       ...(options.evalSourceMap !== undefined ? { evalSourceMap: options.evalSourceMap } : {}),
       ...(options.vendorChunk !== undefined ? { vendorChunk: options.vendorChunk } : {}),
       ...(options.commonChunk !== undefined ? { commonChunk: options.commonChunk } : {}),

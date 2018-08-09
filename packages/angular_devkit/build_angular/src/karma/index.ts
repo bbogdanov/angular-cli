@@ -27,7 +27,7 @@ import {
 import { readTsconfig } from '../angular-cli-files/utilities/read-tsconfig';
 import { requireProjectModule } from '../angular-cli-files/utilities/require-project-module';
 import { AssetPatternObject, CurrentFileReplacement } from '../browser/schema';
-import { addFileReplacements, normalizeAssetPatterns } from '../utils';
+import { defaultProgress, normalizeAssetPatterns, normalizeFileReplacements } from '../utils';
 import { KarmaBuilderSchema } from './schema';
 const webpackMerge = require('webpack-merge');
 
@@ -47,7 +47,8 @@ export class KarmaBuilder implements Builder<KarmaBuilderSchema> {
     const host = new virtualFs.AliasHost(this.context.host as virtualFs.Host<fs.Stats>);
 
     return of(null).pipe(
-      concatMap(() => addFileReplacements(root, host, options.fileReplacements)),
+      concatMap(() => normalizeFileReplacements(options.fileReplacements, host, root)),
+      tap(fileReplacements => options.fileReplacements = fileReplacements),
       concatMap(() => normalizeAssetPatterns(
         options.assets, host, root, projectRoot, builderConfig.sourceRoot)),
       // Replace the assets in options with the normalized version.
@@ -83,7 +84,7 @@ export class KarmaBuilder implements Builder<KarmaBuilderSchema> {
 
         // TODO: inside the configs, always use the project root and not the workspace root.
         // Until then we pretend the app root is relative (``) but the same as `projectRoot`.
-        (karmaOptions.buildWebpack.options as any).root = ''; // tslint:disable-line:no-any
+        karmaOptions.buildWebpack.options.root = '';
 
         // Assign additional karmaConfig options to the local ngapp config
         karmaOptions.configFile = karmaConfig;
@@ -112,7 +113,7 @@ export class KarmaBuilder implements Builder<KarmaBuilderSchema> {
   ) {
     let wco: WebpackConfigOptions;
 
-    const tsConfigPath = getSystemPath(resolve(root, normalize(options.tsConfig as string)));
+    const tsConfigPath = getSystemPath(resolve(root, normalize(options.tsConfig)));
     const tsConfig = readTsconfig(tsConfigPath);
 
     const projectTs = requireProjectModule(getSystemPath(projectRoot), 'typescript') as typeof ts;
@@ -135,6 +136,8 @@ export class KarmaBuilder implements Builder<KarmaBuilderSchema> {
       tsConfigPath,
       supportES2015,
     };
+
+    wco.buildOptions.progress = defaultProgress(wco.buildOptions.progress);
 
     const webpackConfigs: {}[] = [
       getCommonConfig(wco),

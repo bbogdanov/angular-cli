@@ -18,7 +18,7 @@ import {
 import { NodeJsSyncHost } from '@angular-devkit/core/node';
 import { Stats } from 'fs';
 import { EMPTY, Observable, from, of } from 'rxjs';
-import { concatMap, delay, map, mergeMap, retry, tap } from 'rxjs/operators';
+import { concatMap, delay, finalize, map, mergeMap, retry, tap } from 'rxjs/operators';
 
 
 export class TestProjectHost extends NodeJsSyncHost {
@@ -34,8 +34,7 @@ export class TestProjectHost extends NodeJsSyncHost {
       throw new Error('TestProjectHost must be initialized before being used.');
     }
 
-    // tslint:disable-next-line:non-null-operator
-    return this._currentRoot!;
+    return this._currentRoot;
   }
 
   scopedSync(): virtualFs.SyncDelegateHost<Stats> {
@@ -43,8 +42,7 @@ export class TestProjectHost extends NodeJsSyncHost {
       throw new Error('TestProjectHost must be initialized before being used.');
     }
 
-    // tslint:disable-next-line:non-null-operator
-    return this._scopedSyncHost!;
+    return this._scopedSyncHost;
   }
 
   initialize(): Observable<void> {
@@ -90,18 +88,17 @@ export class TestProjectHost extends NodeJsSyncHost {
     // Wait 50ms and retry up to 10 times, to give time for file locks to clear.
     return this.exists(this.root()).pipe(
       delay(50),
-      concatMap(exists => exists ? this.delete(this.root()) : of(null)),
+      concatMap(exists => exists ? this.delete(this.root()) : EMPTY),
       retry(10),
-      tap(() => {
+      finalize(() => {
         this._currentRoot = null;
         this._scopedSyncHost = null;
       }),
-      map(() => { }),
     );
   }
 
   writeMultipleFiles(files: { [path: string]: string | ArrayBufferLike | Buffer }): void {
-    Object.keys(files).map(fileName => {
+    Object.keys(files).forEach(fileName => {
       let content = files[fileName];
       if (typeof content == 'string') {
         content = virtualFs.stringToFileBuffer(content);

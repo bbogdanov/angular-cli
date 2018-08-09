@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import { TestLogger, runTargetSpec } from '@angular-devkit/architect/testing';
+import { DefaultTimeout, TestLogger, runTargetSpec } from '@angular-devkit/architect/testing';
 import { normalize, virtualFs } from '@angular-devkit/core';
 import { tap } from 'rxjs/operators';
 import { TslintBuilderOptions } from '../../src';
@@ -22,6 +22,22 @@ describe('Tslint Target', () => {
   it('works', (done) => {
     runTargetSpec(host, tslintTargetSpec).pipe(
       tap((buildEvent) => expect(buildEvent.success).toBe(true)),
+    ).toPromise().then(done, done.fail);
+  }, 30000);
+
+  it('should report lint error once', (done) => {
+    host.writeMultipleFiles({'src/app/app.component.ts': 'const foo = "";\n' });
+    const logger = new TestLogger('lint-error');
+
+    runTargetSpec(host, tslintTargetSpec, undefined, DefaultTimeout, logger).pipe(
+      tap((buildEvent) => expect(buildEvent.success).toBe(false)),
+      tap(() => {
+        // this is to make sure there are no duplicates
+        expect(logger.includes(`" should be \'\nERROR`)).toBe(false);
+
+        expect(logger.includes(`" should be '`)).toBe(true);
+        expect(logger.includes(`Lint errors found in the listed files`)).toBe(true);
+      }),
     ).toPromise().then(done, done.fail);
   }, 30000);
 
@@ -53,7 +69,7 @@ describe('Tslint Target', () => {
     const logger = new TestLogger('lint-force');
     const overrides: Partial<TslintBuilderOptions> = { force: true };
 
-    runTargetSpec(host, tslintTargetSpec, overrides, logger).pipe(
+    runTargetSpec(host, tslintTargetSpec, overrides, DefaultTimeout, logger).pipe(
       tap((buildEvent) => expect(buildEvent.success).toBe(true)),
       tap(() => {
         expect(logger.includes(`" should be '`)).toBe(true);
@@ -67,7 +83,7 @@ describe('Tslint Target', () => {
     const logger = new TestLogger('lint-format');
     const overrides: Partial<TslintBuilderOptions> = { format: 'stylish' };
 
-    runTargetSpec(host, tslintTargetSpec, overrides, logger).pipe(
+    runTargetSpec(host, tslintTargetSpec, overrides, DefaultTimeout, logger).pipe(
       tap((buildEvent) => expect(buildEvent.success).toBe(false)),
       tap(() => {
         expect(logger.includes(`quotemark`)).toBe(true);

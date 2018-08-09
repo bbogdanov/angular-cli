@@ -82,14 +82,13 @@ describe('Universal Schematic', () => {
       compilerOptions: {
         outDir: '../out-tsc/app-server',
         baseUrl: '.',
-        module: 'commonjs',
       },
       angularCompilerOptions: {
         entryModule: 'app/app.server.module#AppServerModule',
       },
     });
     const angularConfig = JSON.parse(tree.readContent('angular.json'));
-    expect(angularConfig.projects.workspace.architect.server.options.tsConfig)
+    expect(angularConfig.projects.workspace.targets.server.options.tsConfig)
       .toEqual('src/tsconfig.server.json');
   });
 
@@ -103,14 +102,13 @@ describe('Universal Schematic', () => {
       compilerOptions: {
         outDir: '../../out-tsc/app-server',
         baseUrl: '.',
-        module: 'commonjs',
       },
       angularCompilerOptions: {
         entryModule: 'src/app/app.server.module#AppServerModule',
       },
     });
     const angularConfig = JSON.parse(tree.readContent('angular.json'));
-    expect(angularConfig.projects.bar.architect.server.options.tsConfig)
+    expect(angularConfig.projects.bar.targets.server.options.tsConfig)
       .toEqual('projects/bar/tsconfig.server.json');
   });
 
@@ -126,10 +124,10 @@ describe('Universal Schematic', () => {
     const filePath = '/angular.json';
     const contents = tree.readContent(filePath);
     const config = JSON.parse(contents.toString());
-    const arch = config.projects.bar.architect;
-    expect(arch.server).toBeDefined();
-    expect(arch.server.builder).toBeDefined();
-    const opts = arch.server.options;
+    const targets = config.projects.bar.targets;
+    expect(targets.server).toBeDefined();
+    expect(targets.server.builder).toBeDefined();
+    const opts = targets.server.options;
     expect(opts.outputPath).toEqual('dist/bar-server');
     expect(opts.main).toEqual('projects/bar/src/main.server.ts');
     expect(opts.tsConfig).toEqual('projects/bar/tsconfig.server.json');

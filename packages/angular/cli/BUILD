@@ -18,6 +18,7 @@ ts_library(
             "**/*_spec_large.ts",
         ],
     ),
+    data = glob(["**/*.json"]),
     deps = [
         "//packages/angular_devkit/architect",
         "//packages/angular_devkit/core",

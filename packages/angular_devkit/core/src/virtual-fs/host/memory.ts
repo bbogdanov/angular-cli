@@ -33,6 +33,7 @@ import {
   Stats,
 } from './interface';
 
+
 export interface SimpleMemoryHostStats {
   readonly content: FileBuffer | null;
 }
@@ -178,7 +179,7 @@ export class SimpleMemoryHost implements Host<{}> {
   protected _delete(path: Path): void {
     path = this._toAbsolute(path);
     if (this._isDirectory(path)) {
-      for (const [cachePath, _] of this._cache.entries()) {
+      for (const [cachePath] of this._cache.entries()) {
         if (path.startsWith(cachePath + NormalizedSep)) {
           this._cache.delete(cachePath);
         }
@@ -210,6 +211,23 @@ export class SimpleMemoryHost implements Host<{}> {
     } else {
       const content = this._cache.get(from);
       if (content) {
+        const fragments = split(to);
+        const newDirectories = [];
+        let curr: Path = normalize('/');
+        for (const fr of fragments) {
+          curr = join(curr, fr);
+          const maybeStats = this._cache.get(fr);
+          if (maybeStats) {
+            if (maybeStats.isFile()) {
+              throw new PathIsFileException(curr);
+            }
+          } else {
+            newDirectories.push(curr);
+          }
+        }
+        for (const newDirectory of newDirectories) {
+          this._cache.set(newDirectory, this._newDirStats());
+        }
         this._cache.delete(from);
         this._cache.set(to, content);
       }

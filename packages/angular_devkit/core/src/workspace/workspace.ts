@@ -49,6 +49,11 @@ export class WorkspaceNotYetLoadedException extends BaseException {
   constructor() { super(`Workspace needs to be loaded before it is used.`); }
 }
 
+export class AmbiguousProjectPathException extends BaseException {
+  constructor(public readonly path: Path, public readonly projects: ReadonlyArray<string>) {
+    super(`Current active project is ambiguous (${projects.join(',')}) using path: '${path}'`);
+  }
+}
 
 export class Workspace {
   private readonly _workspaceSchemaPath = join(normalize(__dirname), 'workspace-schema.json');
@@ -124,13 +129,14 @@ export class Workspace {
       throw new ProjectNotFoundException(projectName);
     }
 
-    return {
-      ...workspaceProject,
-      // Return only the project properties, and remove the tools.
-      cli: {},
-      schematics: {},
-      architect: {},
-    };
+    // Return only the project properties, and remove the tools.
+    const workspaceProjectClone = {...workspaceProject};
+    delete workspaceProjectClone['cli'];
+    delete workspaceProjectClone['schematics'];
+    delete workspaceProjectClone['architect'];
+    delete workspaceProjectClone['targets'];
+
+    return workspaceProjectClone;
   }
 
   getDefaultProjectName(): string | null {
@@ -175,11 +181,25 @@ export class Workspace {
       // the sort is stable and the first declared project will win).
       .sort((a, b) => b[0].length - a[0].length);
 
-    if (projects[0]) {
-      return projects[0][1];
+    if (projects.length === 0) {
+      return null;
+    } else if (projects.length > 1) {
+      const found = new Set<Path>();
+      const sameRoots = projects.filter(v => {
+        if (!found.has(v[0])) {
+          found.add(v[0]);
+
+          return false;
+        }
+
+        return true;
+      });
+      if (sameRoots.length > 0) {
+        throw new AmbiguousProjectPathException(path, sameRoots.map(v => v[1]));
+      }
     }
 
-    return null;
+    return projects[0][1];
   }
 
   getCli() {
@@ -190,8 +210,8 @@ export class Workspace {
     return this._getTool('schematics');
   }
 
-  getArchitect() {
-    return this._getTool('architect');
+  getTargets() {
+    return this._getTool('targets');
   }
 
   getProjectCli(projectName: string) {
@@ -202,14 +222,19 @@ export class Workspace {
     return this._getProjectTool(projectName, 'schematics');
   }
 
-  getProjectArchitect(projectName: string) {
-    return this._getProjectTool(projectName, 'architect');
+  getProjectTargets(projectName: string) {
+    return this._getProjectTool(projectName, 'targets');
   }
 
-  private _getTool(toolName: 'cli' | 'schematics' | 'architect'): WorkspaceTool {
+  private _getTool(toolName: 'cli' | 'schematics' | 'targets'): WorkspaceTool {
     this._assertLoaded();
 
-    const workspaceTool = this._workspace[toolName];
+    let workspaceTool = this._workspace[toolName];
+
+    // Try falling back to 'architect' if 'targets' is not there or is empty.
+    if ((!workspaceTool || Object.keys(workspaceTool).length === 0) && toolName === 'targets') {
+      workspaceTool = this._workspace['architect'];
+    }
 
     if (!workspaceTool) {
       throw new WorkspaceToolNotFoundException(toolName);
@@ -219,7 +244,7 @@ export class Workspace {
   }
 
   private _getProjectTool(
-    projectName: string, toolName: 'cli' | 'schematics' | 'architect',
+    projectName: string, toolName: 'cli' | 'schematics' | 'targets',
   ): WorkspaceTool {
     this._assertLoaded();
 
@@ -229,7 +254,13 @@ export class Workspace {
       throw new ProjectNotFoundException(projectName);
     }
 
-    const projectTool = workspaceProject[toolName];
+    let projectTool = workspaceProject[toolName];
+
+    // Try falling back to 'architect' if 'targets' is not there or is empty.
+    if ((!projectTool || Object.keys(projectTool).length === 0) && toolName === 'targets') {
+      projectTool = workspaceProject['architect'];
+    }
+
 
     if (!projectTool) {
       throw new ProjectToolNotFoundException(toolName);

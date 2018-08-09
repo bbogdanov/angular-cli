@@ -5,8 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-// tslint:disable:no-any
-// tslint:disable:non-null-operator
+// tslint:disable:no-any non-null-operator no-big-function
 import { of as observableOf } from 'rxjs';
 import { map, mergeMap } from 'rxjs/operators';
 import { CoreSchemaRegistry } from './registry';
@@ -363,6 +362,64 @@ describe('CoreSchemaRegistry', () => {
           expect(data.arr[0].test).toBe('yep');
           expect(data.arr2).toEqual([1, 2, 3]);
           expect(data.obj.deep.arr).toEqual([1, 2, 3]);
+        }),
+      )
+      .toPromise().then(done, done.fail);
+  });
+
+  it('adds undefined properties', done => {
+    const registry = new CoreSchemaRegistry();
+    const data: any = {};  // tslint:disable-line:no-any
+
+    registry
+      .compile({
+        properties: {
+          bool: { type: 'boolean' },
+          str: { type: 'string', default: 'someString' },
+          obj: {
+            properties: {
+              num: { type: 'number' },
+              other: { type: 'number', default: 0 },
+            },
+          },
+          objAllOk: {
+            allOf: [
+              { type: 'object' },
+            ],
+          },
+          objAllBad: {
+            allOf: [
+              { type: 'object' },
+              { type: 'number' },
+            ],
+          },
+          objOne: {
+            oneOf: [
+              { type: 'object' },
+            ],
+          },
+          objNotOk: {
+            not: { not: { type: 'object' } },
+          },
+          objNotBad: {
+            type: 'object',
+            not: { type: 'object' },
+          },
+        },
+      })
+      .pipe(
+        mergeMap(validator => validator(data)),
+        map(result => {
+          expect(result.success).toBe(true);
+          expect(data.bool).toBeUndefined();
+          expect(data.str).toBe('someString');
+          expect(data.obj.num).toBeUndefined();
+          expect(data.obj.other).toBe(0);
+          expect(data.objAllOk).toEqual({});
+          expect(data.objOne).toEqual({});
+          expect(data.objAllBad).toBeUndefined();
+          expect(data.objNotOk).toEqual({});
+          expect(data.objNotBad).toBeUndefined();
         }),
       )
       .toPromise().then(done, done.fail);

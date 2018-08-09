@@ -5,11 +5,12 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+// tslint:disable:no-big-function
 
-import { runTargetSpec } from '@angular-devkit/architect/testing';
+import { DefaultTimeout, runTargetSpec } from '@angular-devkit/architect/testing';
 import { normalize, tags, virtualFs } from '@angular-devkit/core';
 import { concatMap, tap } from 'rxjs/operators';
-import { Timeout, browserTargetSpec, host } from '../utils';
+import { browserTargetSpec, host } from '../utils';
 
 
 describe('Browser Builder styles', () => {
@@ -104,7 +105,7 @@ describe('Browser Builder styles', () => {
         expect(content).toMatch(jsIndexMatches[fileName]);
       })),
     ).toPromise().then(done, done.fail);
-  }, Timeout.Basic);
+  });
 
   it('supports empty styleUrls in components', (done) => {
     host.writeMultipleFiles({
@@ -127,7 +128,7 @@ describe('Browser Builder styles', () => {
     runTargetSpec(host, browserTargetSpec, overrides).pipe(
       tap((buildEvent) => expect(buildEvent.success).toBe(true)),
     ).toPromise().then(done, done.fail);
-  }, Timeout.Basic);
+  });
 
   extensionsWithImportSupport.forEach(ext => {
     it(`supports imports in ${ext} files`, (done) => {
@@ -180,7 +181,7 @@ describe('Browser Builder styles', () => {
           expect(content).toMatch(matches[fileName]);
         })),
       ).toPromise().then(done, done.fail);
-    }, Timeout.Basic);
+    });
   });
 
   extensionsWithImportSupport.forEach(ext => {
@@ -206,7 +207,7 @@ describe('Browser Builder styles', () => {
       runTargetSpec(host, browserTargetSpec, overrides).pipe(
         tap((buildEvent) => expect(buildEvent.success).toBe(true)),
       ).toPromise().then(done, done.fail);
-    }, Timeout.Basic);
+    });
   });
 
   it(`supports material icons`, (done) => {
@@ -218,10 +219,10 @@ describe('Browser Builder styles', () => {
       ],
     };
 
-    runTargetSpec(host, browserTargetSpec, overrides).pipe(
+    runTargetSpec(host, browserTargetSpec, overrides, DefaultTimeout * 2).pipe(
       tap((buildEvent) => expect(buildEvent.success).toBe(true)),
     ).toPromise().then(done, done.fail);
-  }, Timeout.Complex);
+  });
 
   extensionsWithVariableSupport.forEach(ext => {
     it(`supports ${ext} includePaths`, (done) => {
@@ -274,7 +275,7 @@ describe('Browser Builder styles', () => {
           expect(content).toMatch(matches[fileName]);
         })),
       ).toPromise().then(done, done.fail);
-    }, Timeout.Standard);
+    });
   });
 
   it('inlines resources', (done) => {
@@ -331,7 +332,7 @@ describe('Browser Builder styles', () => {
       //   throw new Error('Expected no postcss-url file read warnings.');
       // }
     ).toPromise().then(done, done.fail);
-  }, Timeout.Basic);
+  });
 
   it(`supports font-awesome imports`, (done) => {
     host.writeMultipleFiles({
@@ -369,7 +370,7 @@ describe('Browser Builder styles', () => {
           div { -ms-flex: 1; flex: 1 }`);
       }),
     ).toPromise().then(done, done.fail);
-  }, Timeout.Basic);
+  });
 
   it(`minimizes css`, (done) => {
     host.writeMultipleFiles({
@@ -381,7 +382,7 @@ describe('Browser Builder styles', () => {
 
     const overrides = { extractCss: true, optimization: true };
 
-    runTargetSpec(host, browserTargetSpec, overrides).pipe(
+    runTargetSpec(host, browserTargetSpec, overrides, DefaultTimeout * 2).pipe(
       tap((buildEvent) => expect(buildEvent.success).toBe(true)),
       tap(() => {
         const fileName = 'dist/styles.css';
@@ -390,7 +391,7 @@ describe('Browser Builder styles', () => {
           '/*! important-comment */div{-ms-flex:1;flex:1}');
       }),
     ).toPromise().then(done, done.fail);
-  }, Timeout.Complex);
+  });
 
   // TODO: consider making this a unit test in the url processing plugins.
   it(`supports baseHref and deployUrl in resource urls`, (done) => {
@@ -527,5 +528,5 @@ describe('Browser Builder styles', () => {
     runTargetSpec(host, browserTargetSpec, overrides).pipe(
       tap((buildEvent) => expect(buildEvent.success).toBe(true)),
     ).toPromise().then(done, done.fail);
-  }, Timeout.Basic);
+  });
 });
