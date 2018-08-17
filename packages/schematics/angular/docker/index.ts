@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import { strings } from '@angular-devkit/core';
 import {
   Rule,
   SchematicContext,
@@ -22,17 +21,41 @@ import { dirname } from 'path';
 import { getWorkspace, getWorkspacePath } from '../utility/config';
 import { getProjectTargets } from '../utility/project-targets';
 import { Path } from './../../../angular_devkit/core/src/virtual-fs/path';
+import { WorkspaceTool } from './../../../angular_devkit/core/src/workspace/workspace-schema';
 import { Schema as DockerOptions } from './schema';
+
+// tslint:disable-next-line:max-line-length
+const applyDockerOptions = (projectTargets: WorkspaceTool, dockerOptions: DockerOptions, environmentOptions: {machineName: string, isImageDeploy: boolean, serviceName: string}) => {
+  if (!projectTargets || !dockerOptions || !environmentOptions) {
+    return;
+  }
+
+  if (projectTargets.build
+     && projectTargets.build.configurations
+     && projectTargets.build.configurations.docker) {
+      const dockerConfiguration = projectTargets.build.configurations.docker;
+      dockerConfiguration.environments[dockerOptions.environment] = environmentOptions;
+
+      return dockerConfiguration;
+  }
+
+  return {
+    imageName: dockerOptions.imageName,
+    registryAddress: dockerOptions.imageRegistry,
+    environments: {
+      [dockerOptions.environment]: environmentOptions,
+    },
+  };
+
+};
 
 function updateConfigFile(options: DockerOptions): Rule {
   return (host: Tree, context: SchematicContext) => {
 
-    const dockerOptions = {
-      imageName: options.imageName,
-      registryAddress: options.imageRegistry,
-      machineName: options.machineName,
-      isImageDeploy: false,
-      serviceName: options.serviceName,
+    const environmentOptions = {
+        machineName: options.machineName,
+        isImageDeploy: false,
+        serviceName: options.serviceName,
     };
 
     context.logger.debug('updating config file.');
@@ -55,18 +78,18 @@ function updateConfigFile(options: DockerOptions): Rule {
     let applyTo = projectTargets.build;
 
     if (options.environment &&
-        projectTargets.build.configurations &&
-        projectTargets.build.configurations[options.environment]) {
-      applyTo = projectTargets.build.configurations[options.environment];
+      projectTargets.build.configurations) {
+      applyTo = projectTargets.build.configurations;
     }
 
-    applyTo.docker = dockerOptions;
+    applyTo.docker = applyDockerOptions(projectTargets, options, environmentOptions);
 
     host.overwrite(workspacePath, JSON.stringify(workspace, null, 2));
 
     return host;
   };
 }
+
 
 export default function (options: DockerOptions): Rule {
   return (host: Tree) => {
