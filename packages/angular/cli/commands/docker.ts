@@ -7,10 +7,9 @@
  */
 
 import { tags, terminal } from '@angular-devkit/core';
-import * as child from 'child_process';
+import { execSync } from 'child_process';
 import { SchematicCommand } from '../models/schematic-command';
 import { CommandScope, Option } from './../models/command';
-
 
 // tslint:disable:no-global-tslint-disable no-any
 export default class DockerCommand extends SchematicCommand {
@@ -43,13 +42,7 @@ export default class DockerCommand extends SchematicCommand {
   public async initialize(options: any) {
     await super.initialize(options);
 
-    child.exec('docker', () => {
-      this.logger.warn(`docker-cli is not installed.`);
-    });
-
-    child.exec('docker-compose', () => {
-      this.logger.warn(`docker-compose is not installed.`);
-    });
+    this.dockerCliExistChecker();
 
     const schematicOptions = await this.getOptions({
       schematicName: this.schematicName,
@@ -123,5 +116,14 @@ export default class DockerCommand extends SchematicCommand {
     delete opts.skipGit;
 
     return opts;
+  }
+
+  private dockerCliExistChecker() {
+    try {
+      execSync('docker', { stdio: [] });
+    } catch (err) {
+      this.logger.warn('\nDocker-CLI is available on https://docs.docker.com/install/');
+      throw Error('Docker-CLI is missing!');
+    }
   }
 }
