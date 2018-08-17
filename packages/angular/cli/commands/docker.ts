@@ -12,7 +12,7 @@ import { SchematicCommand } from '../models/schematic-command';
 import { CommandScope, Option } from './../models/command';
 
 // tslint:disable:no-global-tslint-disable no-any
-export default class DockerCommand extends SchematicCommand {
+export class DockerCommand extends SchematicCommand {
   public readonly name = 'docker';
   public readonly description = 'Generates and/or modifies docker files.';
   public readonly scope = CommandScope.inProject;

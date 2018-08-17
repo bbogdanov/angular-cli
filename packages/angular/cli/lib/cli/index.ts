@@ -12,6 +12,7 @@ import { AddCommand } from '../../commands/add';
 import { BuildCommand } from '../../commands/build';
 import { ConfigCommand } from '../../commands/config';
 import { DocCommand } from '../../commands/doc';
+import { DockerCommand } from '../../commands/docker';
 import { E2eCommand } from '../../commands/e2e';
 import { AwesomeCommand } from '../../commands/easter-egg';
 import { EjectCommand } from '../../commands/eject';
@@ -28,7 +29,6 @@ import { VersionCommand } from '../../commands/version';
 import { Xi18nCommand } from '../../commands/xi18n';
 import { CommandMap, runCommand } from '../../models/command-runner';
 import { getProjectDetails } from '../../utilities/project';
-import DockerCommand from '../../commands/docker';
 
 
 async function loadCommands(): Promise<CommandMap> {
