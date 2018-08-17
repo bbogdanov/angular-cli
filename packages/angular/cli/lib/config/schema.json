@@ -709,6 +709,31 @@
               "description": "Enables @angular-devkit/build-optimizer optimizations when using the 'aot' option.",
               "default": false
             },
+            "docker": {
+              "type": "object",
+              "description": "Enables dockerization of the application.",
+              "properties": {
+                "imageName": {
+                  "type": "string",
+                  "description": "The name of the image."
+                },
+                "registryAddress": {
+                  "type": "string",
+                  "description": "The docker registry where the image is located or have to be located."
+                },
+                "machineName": {
+                  "type": "string",
+                  "description": "The name of the machine."
+                },
+                "isImageDeploy": {
+                  "type": "boolean",
+                  "description": "Information if docker deploy is already been run."
+                },
+                "serviceName": {
+                  "type": "string",
+                  "description": "The name of the service."
+                }
+            },
             "namedChunks": {
               "type": "boolean",
               "description": "Use file name for lazy loaded chunks.",
