@@ -93,7 +93,7 @@ function updateIndexFile(options: PwaOptions): Rule {
       ...itemsToAddToHead.map(line => headIndent + line),
       ...lines.slice(closingHeadTagLineIndex, closingBodyTagLineIndex),
       ...itemsToAddToBody.map(line => bodyIndent + line),
-      ...lines.slice(closingHeadTagLineIndex),
+      ...lines.slice(closingBodyTagLineIndex),
     ].join('\n');
 
     host.overwrite(path, updatedIndex);
@@ -136,7 +136,7 @@ function addManifestToAssetsConfig(options: PwaOptions) {
 }
 
 export default function (options: PwaOptions): Rule {
-  return (host: Tree) => {
+  return (host: Tree, context: SchematicContext) => {
     const workspace = getWorkspace(host);
     if (!options.project) {
       throw new SchematicsException('Option "project" is required.');
@@ -166,6 +166,6 @@ export default function (options: PwaOptions): Rule {
       mergeWith(assetsTemplateSource),
       updateIndexFile(options),
       addManifestToAssetsConfig(options),
-    ]);
+    ])(host, context);
   };
 }
