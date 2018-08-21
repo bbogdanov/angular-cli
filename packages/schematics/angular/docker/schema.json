@@ -19,11 +19,16 @@
       },
       "visible": false
     },
+    "flat": {
+      "type": "boolean",
+      "description": "Flag to indicate if a dir is created.",
+      "default": true
+    },
     "environment": {
       "description": "Initialize for a particular environment.",
       "alias": "env",
       "type": "string",
-      "default": "default"
+      "default": "production"
     },
     "imageName": {
       "description": "The image name to use for image pushes.",

@@ -1,3 +1,4 @@
+import { CommandConstructor } from './../models/command';
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -9,25 +10,9 @@
 import { tags, terminal } from '@angular-devkit/core';
 import { execSync } from 'child_process';
 import { SchematicCommand } from '../models/schematic-command';
-import { CommandScope, Option } from './../models/command';
 
 // tslint:disable:no-global-tslint-disable no-any
 export class DockerCommand extends SchematicCommand {
-  public readonly name = 'docker';
-  public readonly description = 'Generates and/or modifies docker files.';
-  public readonly scope = CommandScope.inProject;
-  public arguments: string[] = [];
-  public options: Option[] = [
-    ...this.coreOptions,
-    {
-      name: 'verbose',
-      type: Boolean,
-      default: false,
-      aliases: ['v'],
-      description: 'Adds more details to output logging.',
-    },
-  ];
-
   private schematicName = 'docker';
 
   private collectionName = '@schematics/angular';
@@ -49,12 +34,11 @@ export class DockerCommand extends SchematicCommand {
       collectionName: this.collectionName,
     });
 
-    this.options = this.options.concat(schematicOptions.options);
-    this.arguments = this.arguments.concat(schematicOptions.arguments.map(a => a.name));
+    this.addOptions(schematicOptions);
   }
 
   public validate(options: any): boolean {
-    if (!options._[0]) {
+    if (!options) {
       this.logger.error(tags.oneLine`
         The "ng docker" command requires an
         action name to be specified.
@@ -71,8 +55,6 @@ export class DockerCommand extends SchematicCommand {
       options.skipGit = true;
     }
 
-    options = this.removeLocalOptions(options);
-
     return this.runSchematic({
       collectionName: this.collectionName,
       schematicName: this.schematicName,
@@ -83,7 +65,8 @@ export class DockerCommand extends SchematicCommand {
     });
   }
 
-  public printHelp(options: any) {
+  public printHelp(_name: string, _description: string, options: any) {
+    console.log('Options', options);
     if (!options._.length) {
       this.logger.info(`usage: ng docker <command>`);
       this.commands.forEach((command: any) => {
@@ -98,24 +81,9 @@ export class DockerCommand extends SchematicCommand {
     const command = options._[0];
 
     if (command === 'init') {
-      const argDisplay = this.arguments && this.arguments.length > 0
-        ? ' ' + this.arguments.filter(a => a !== 'schematic').map(a => `<${a}>`).join(' ')
-        : '';
-      const optionsDisplay = this.options && this.options.length > 0
-        ? ' [options]'
-        : '';
-      this.logger.info(`usage: ng docker ${command}${argDisplay}${optionsDisplay}`);
-      this.printHelpOptions(options);
+      this.printHelpUsage(`usage: ng docker ${command}`, this.options);
+      this.printHelpOptions(this.options);
     }
-  }
-
-  private removeLocalOptions(options: any): any {
-    const opts = Object.assign({}, options);
-    delete opts.verbose;
-    delete opts.collection;
-    delete opts.skipGit;
-
-    return opts;
   }
 
   private dockerCliExistChecker() {

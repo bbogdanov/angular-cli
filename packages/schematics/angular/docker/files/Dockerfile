@@ -9,7 +9,7 @@ RUN npm install --silent
 
 COPY ./ /app/
 
-RUN npm run build -- --output-path=./dist/out --$environment --build-optimizer
+RUN npm run build -- --output-path=./dist/out --configuration=$environment --build-optimizer
 
 FROM nginx:latest
 

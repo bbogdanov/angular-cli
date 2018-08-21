@@ -1,0 +1,28 @@
+{
+    "$schema": "http://json-schema.org/schema",
+    "id": "DockerCommandOptions",
+    "description": "Generates and/or modifies files based on a schematic.",
+    "$longDescription": "",
+  
+    "$aliases": [ "dkr" ],
+    "$scope": "in",
+    "$type": "schematics",
+    "$impl": "./docker-impl#DockerCommand",
+  
+    "type": "object",
+    "properties": {
+      "dryRun": {
+        "type": "boolean",
+        "default": false,
+        "aliases": ["d"],
+        "description": "Run through without making any changes."
+      },
+      "force": {
+        "type": "boolean",
+        "default": false,
+        "aliases": ["f"],
+        "description": "Forces overwriting of files."
+      }
+    },
+    "required": []
+  }
