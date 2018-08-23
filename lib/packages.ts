@@ -136,7 +136,7 @@ function _findAllPackageJson(dir: string, exclude: RegExp): string[] {
         return;
       } else if (fileName == 'package.json') {
         result.push(p);
-      } else if (fs.statSync(p).isDirectory()) {
+      } else if (fs.statSync(p).isDirectory() && fileName != 'node_modules') {
         result.push(..._findAllPackageJson(p, exclude));
       }
     });
@@ -190,6 +190,12 @@ export const packages: PackageMap =
         // Only build the entry if there's a package name.
         return packages;
       }
+      if (!(name in monorepoPackages)) {
+        throw new Error(
+          `Package ${name} found in ${JSON.stringify(pkg.root)}, not found in .monorepo.json.`,
+        );
+      }
+
       const bin: {[name: string]: string} = {};
       Object.keys(packageJson['bin'] || {}).forEach(binName => {
         let p = path.resolve(pkg.root, packageJson['bin'][binName]);

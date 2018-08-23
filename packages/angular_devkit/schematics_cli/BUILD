@@ -4,12 +4,15 @@
 # found in the LICENSE file at https://angular.io/license
 package(default_visibility = ["//visibility:public"])
 
-load("//tools:defaults.bzl", "ts_library")
+load("@build_bazel_rules_typescript//:defs.bzl", "ts_library")
 
 licenses(["notice"])  # MIT License
 
+
+# @angular-devkit/schematics-cli
+
 ts_library(
-    name = "schematics-cli",
+    name = "schematics_cli",
     srcs = glob(
         include = ["bin/**/*.ts"],
         exclude = [
@@ -20,7 +23,6 @@ ts_library(
     ),
     module_name = "@angular-devkit/schematics-cli",
     module_root = "bin",
-    tsconfig = "//:tsconfig.json",
     deps = [
         "//packages/angular_devkit/core",
         "//packages/angular_devkit/core:node",
