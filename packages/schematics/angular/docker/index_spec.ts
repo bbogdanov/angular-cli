@@ -22,6 +22,7 @@ describe('Docker Schematic', () => {
   const defaultOptions: DockerOptions = {
     project: 'bar',
     name: 'foo',
+    flat: true,
     environment: 'prod',
     imageName: 'null',
     useImage: false,
@@ -36,6 +37,16 @@ describe('Docker Schematic', () => {
     name: 'workspace',
     newProjectRoot: 'projects',
     version: '6.0.0',
+  };
+
+  const appOptions: ApplicationOptions = {
+    name: 'bar',
+    inlineStyle: false,
+    inlineTemplate: false,
+    routing: false,
+    style: 'css',
+    skipTests: false,
+    skipPackageJson: false,
   };
 
   const initialWorkspaceAppOptions: ApplicationOptions = {
@@ -54,18 +65,20 @@ describe('Docker Schematic', () => {
   beforeEach(() => {
     appTree = schematicRunner.runSchematic('workspace', workspaceOptions);
     appTree = schematicRunner.runSchematic('application', initialWorkspaceAppOptions, appTree);
+    appTree = schematicRunner.runSchematic('application', appOptions, appTree);
   });
 
   it('should create docker default files', () => {
     const options = { ...defaultOptions };
     const tree = schematicRunner.runSchematic('docker', options, appTree);
     const files = tree.files;
+    const path = '/projects/bar';
 
-    expect(files.indexOf('/.dockerignore')).toBeGreaterThanOrEqual(0);
-    expect(files.indexOf('/Dockerfile')).toBeGreaterThanOrEqual(0);
-    expect(files.indexOf('/docker-compose.yml')).toBeGreaterThanOrEqual(0);
-    expect(files.indexOf(`/docker-compose.${options.environment}.yml`)).toBeGreaterThanOrEqual(0);
-    expect(files.indexOf(`/nginx.conf`)).toBeGreaterThanOrEqual(0);
+    expect(files.indexOf(`${path}/.dockerignore`)).toBeGreaterThanOrEqual(0);
+    expect(files.indexOf(`${path}/Dockerfile`)).toBeGreaterThanOrEqual(0);
+    expect(files.indexOf(`${path}/docker-compose.yml`)).toBeGreaterThanOrEqual(0);
+    expect(files.indexOf(`${path}/docker-compose.${options.environment}.yml`)).toBeGreaterThanOrEqual(0);
+    expect(files.indexOf(`${path}/nginx.conf`)).toBeGreaterThanOrEqual(0);
   });
 
 });
