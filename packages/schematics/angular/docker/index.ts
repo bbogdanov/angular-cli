@@ -17,7 +17,7 @@ import {
   template,
   url,
 } from '@angular-devkit/schematics';
-import { getWorkspace, getWorkspacePath } from '../utility/config';
+import { getWorkspace } from '../utility/config';
 import { NodeScript, addPackageJsonScript } from '../utility/dependencies';
 import { getProjectTargets } from '../utility/project-targets';
 import { WorkspaceTool } from './../../../angular_devkit/core/src/workspace/workspace-schema';
@@ -51,6 +51,7 @@ const applyDockerOptions = (projectTargets: WorkspaceTool, dockerOptions: Docker
 
 function updateConfigFile(options: DockerOptions): Rule {
   return (host: Tree, context: SchematicContext) => {
+    context.logger.debug('updating config file.');
 
     const environmentOptions = {
       machineName: options.machineName,
@@ -58,33 +59,19 @@ function updateConfigFile(options: DockerOptions): Rule {
       serviceName: options.serviceName,
     };
 
-    context.logger.debug('updating config file.');
-    const workspacePath = getWorkspacePath(host);
-
     const workspace = getWorkspace(host);
 
-    const project = workspace.projects[options.project as string];
+    const projectTargets = getProjectTargets(workspace, options.project);
 
-    if (!project) {
-      throw new Error(`Project is not defined in this workspace.`);
+    const target = projectTargets.build;
+
+    if (!target || !target.configurations) {
+      throw Error('Build configurations are missing!');
     }
 
-    const projectTargets = getProjectTargets(project);
-
-    if (!projectTargets) {
-      throw new Error(`Target is not defined for this project.`);
-    }
-
-    let applyTo = projectTargets.build;
-
-    if (options.environment &&
-      projectTargets.build.configurations) {
-      applyTo = projectTargets.build.configurations;
-    }
+    const applyTo = target.configurations;
 
     applyTo.docker = applyDockerOptions(projectTargets, options, environmentOptions);
-
-    host.overwrite(workspacePath, JSON.stringify(workspace, null, 2));
 
     return host;
   };

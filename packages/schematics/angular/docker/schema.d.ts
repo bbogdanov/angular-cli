@@ -10,7 +10,7 @@ export interface Schema {
   /**
    * The name of the project.
    */
-  project?: string;
+  project: string;
   /**
    * TODO find way to remove this dependency.
   * The name of the project.

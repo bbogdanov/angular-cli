@@ -8,40 +8,34 @@
 
 // tslint:disable:no-global-tslint-disable no-any
 import { execSync } from 'child_process';
-import { Option } from '../models/interface';
+import { Arguments, Option } from '../models/interface';
 import { SchematicCommand } from '../models/schematic-command';
 import { parseJsonSchemaToOptions } from '../utilities/json-schema';
-import { BaseSchematicOptions } from './../models/schematic-command';
+import { Schema as DockerCommandSchema } from './docker';
 
-export enum DockerActions {
-  init = 'init',
-  deploy = 'deploy',
-  push = 'push',
-}
+export const DockerActions = {
+  init: 'init',
+  push: 'push',
+  deploy: 'deploy',
+};
 
-export interface DockerCommandOptions extends BaseSchematicOptions {
-  action?: DockerActions;
-}
+export class DockerCommand extends SchematicCommand<DockerCommandSchema> {
 
-export class DockerCommand<
-  T extends DockerCommandOptions = DockerCommandOptions,
-> extends SchematicCommand<T> {
-
-  private collectionName = '@schematics/angular';
-
-  private schematicName = 'docker';
-
-  public async initialize(options: T) {
+  public async initialize(options: DockerCommandSchema & Arguments) {
     await super.initialize(options);
+
+    this.schematicName = 'docker';
 
     this.dockerCliExistChecker();
 
     if (options.action && options.action === DockerActions.init) {
+
       const collection = this.getCollection(this.collectionName);
+      this.description.suboptions = {};
 
       this.description.suboptions = {};
 
-      const schematic = this.getSchematic(collection, this.schematicName, true);
+      const schematic = this.getSchematic(collection, 'docker');
       let options: Option[] = [];
 
       if (schematic.description.schemaJson) {
@@ -55,13 +49,13 @@ export class DockerCommand<
     }
   }
 
-  public async run(options: T) {
+  public async run(options: DockerCommandSchema & Arguments) {
 
     switch (options.action) {
       case DockerActions.init:
         return await this.runSchematic({
           collectionName: this.collectionName,
-          schematicName: this.schematicName,
+          schematicName: 'docker',
           schematicOptions: options['--'] || [],
           debug: !!options.debug || false,
           dryRun: !!options.dryRun || false,
@@ -74,6 +68,10 @@ export class DockerCommand<
 
   private dockerCliExistChecker() {
     try {
+      /**
+       * Checking for the default docker-cli existance in the machine.
+       * Stdio removes all the output
+       */
       execSync('docker', { stdio: [] });
     } catch (err) {
       this.logger.warn('\nDocker-CLI is available on https://docs.docker.com/install/');
