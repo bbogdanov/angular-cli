@@ -8,9 +8,8 @@
 
 // tslint:disable:no-global-tslint-disable no-any
 import { execSync } from 'child_process';
-import { Arguments, Option } from '../models/interface';
+import { Arguments } from '../models/interface';
 import { SchematicCommand } from '../models/schematic-command';
-import { parseJsonSchemaToOptions } from '../utilities/json-schema';
 import { Schema as DockerCommandSchema } from './docker';
 
 export const DockerActions = {
@@ -26,36 +25,24 @@ export class DockerCommand extends SchematicCommand<DockerCommandSchema> {
 
     this.schematicName = 'docker';
 
-    this.dockerCliExistChecker();
+    if (options.action === DockerActions.init && options.help) {
 
-    if (options.action && options.action === DockerActions.init) {
-
-      const collection = this.getCollection(this.collectionName);
-      this.description.suboptions = {};
-
-      this.description.suboptions = {};
-
-      const schematic = this.getSchematic(collection, 'docker');
-      let options: Option[] = [];
-
-      if (schematic.description.schemaJson) {
-        options = await parseJsonSchemaToOptions(
-          this._workflow.registry,
-          schematic.description.schemaJson,
-        );
-      }
-
-      this.description.suboptions[`${this.collectionName}:${this.schematicName}`] = options;
     }
+
+    this.dockerCliExistChecker();
   }
 
   public async run(options: DockerCommandSchema & Arguments) {
+
+    if (!this.schematicName) {
+      throw Error('Schematic name is required but is it empty!');
+    }
 
     switch (options.action) {
       case DockerActions.init:
         return await this.runSchematic({
           collectionName: this.collectionName,
-          schematicName: 'docker',
+          schematicName: this.schematicName,
           schematicOptions: options['--'] || [],
           debug: !!options.debug || false,
           dryRun: !!options.dryRun || false,

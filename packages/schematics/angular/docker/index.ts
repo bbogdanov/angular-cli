@@ -23,10 +23,9 @@ import { getProjectTargets } from '../utility/project-targets';
 import { WorkspaceTool } from './../../../angular_devkit/core/src/workspace/workspace-schema';
 import { Schema as DockerOptions } from './schema';
 
-
 // tslint:disable-next-line:max-line-length
-const applyDockerOptions = (projectTargets: WorkspaceTool, dockerOptions: DockerOptions, environmentOptions: { machineName: string, isImageDeploy: boolean, serviceName: string }) => {
-  if (!projectTargets || !dockerOptions || !environmentOptions) {
+const applyDockerOptions = (projectTargets: WorkspaceTool, dockerOptions: DockerOptions, environmentOptions: { machineName: string | undefined, isImageDeploy: boolean, serviceName: string | undefined }) => {
+  if (!projectTargets || !dockerOptions || !environmentOptions || !dockerOptions.environment) {
     return;
   }
 
@@ -61,6 +60,10 @@ function updateConfigFile(options: DockerOptions): Rule {
 
     const workspace = getWorkspace(host);
 
+    if (!options.project) {
+      throw new SchematicsException('Option (project) is required.');
+    }
+
     const projectTargets = getProjectTargets(workspace, options.project);
 
     const target = projectTargets.build;
@@ -70,6 +73,10 @@ function updateConfigFile(options: DockerOptions): Rule {
     }
 
     const applyTo = target.configurations;
+
+    if (!options.machineName || !options.serviceName) {
+        throw new SchematicsException('Option (machineName) and (serviceName) are required.');
+    }
 
     applyTo.docker = applyDockerOptions(projectTargets, options, environmentOptions);
 
