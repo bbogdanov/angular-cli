@@ -10,6 +10,7 @@
 import { execSync } from 'child_process';
 import { Arguments } from '../models/interface';
 import { SchematicCommand } from '../models/schematic-command';
+import { parseJsonSchemaToSubCommandDescription } from '../utilities/json-schema';
 import { Schema as DockerCommandSchema } from './docker';
 
 export const DockerActions = {
@@ -26,7 +27,23 @@ export class DockerCommand extends SchematicCommand<DockerCommandSchema> {
     this.schematicName = 'docker';
 
     if (options.action === DockerActions.init && options.help) {
+      const collection = this.getCollection(this.collectionName);
+      const schematic = this.getSchematic(collection, this.schematicName, true);
 
+      if (schematic.description.schemaJson) {
+        const subcommand = await parseJsonSchemaToSubCommandDescription(
+          this.schematicName,
+          schematic.description.path,
+          this._workflow.registry,
+          schematic.description.schemaJson,
+          this.logger,
+        );
+
+        if (subcommand) {
+          subcommand.options.sort();
+          this.description.options = [...this.description.options, ...subcommand.options];
+        }
+      }
     }
 
     this.dockerCliExistChecker();
